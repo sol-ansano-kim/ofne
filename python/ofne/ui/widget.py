@@ -7,7 +7,7 @@ from ..core.scene import OFnScene
 
 
 NODE_DEFAULT_WIDTH = 100
-NODE_DEFAULT_HEGIHT = 20
+NODE_DEFAULT_HEGIHT = 30
 
 
 class OFnUIOpSelector(QtWidgets.QLineEdit):
@@ -52,8 +52,8 @@ class OFnUIOpSelector(QtWidgets.QLineEdit):
 class OFnUINodeBody(QtWidgets.QGraphicsPathItem):
     def __init__(self, needs, out, parent=None):
         super(OFnUINodeBody, self).__init__(parent=parent)
-        self.__normal_brush = QtGui.QBrush(QtGui.QColor(31, 41, 31), QtCore.Qt.SolidPattern)
-        self.__selected_brush = QtGui.QBrush(QtGui.QColor(71, 81, 71), QtCore.Qt.SolidPattern)
+        self.__normal_brush = QtGui.QBrush(QtGui.QColor(51, 49, 58), QtCore.Qt.SolidPattern)
+        self.__selected_brush = QtGui.QBrush(QtGui.QColor(81, 83, 102), QtCore.Qt.SolidPattern)
         rect_height = NODE_DEFAULT_HEGIHT * max(needs, 1)
         path = QtGui.QPainterPath()
         path.addRoundedRect(0, 0, NODE_DEFAULT_WIDTH, rect_height, 5, 5)
@@ -66,9 +66,15 @@ class OFnUINodeBody(QtWidgets.QGraphicsPathItem):
 
 class OFnUINodeLabel(QtWidgets.QGraphicsSimpleTextItem):
     def __init__(self, name, parent=None):
-        super(OFnUINodeLabel, self).__init__(name, parent=parent)
-        self.__normal_pen = QtGui.QPen(QtGui.QColor(150, 164, 176))
-        self.__selected_pen = QtGui.QPen(QtGui.QColor(78, 201, 176))
+        super(OFnUINodeLabel, self).__init__(parent=parent)
+        self.setLabel(name)
+        self.__normal_pen = QtGui.QPen(QtGui.QColor(210, 204, 216))
+        self.__selected_pen = QtGui.QPen(QtGui.QColor(124, 125, 255))
+
+    def setLabel(self, name):
+        frect = QtGui.QFontMetrics(self.font()).boundingRect(name)
+        self.setPos((NODE_DEFAULT_WIDTH - frect.width()) * 0.5, 0)
+        self.setText(name)
 
     def paint(self, painter, option, widget):
         self.setPen(self.__selected_pen if self.isSelected() else self.__normal_pen)
@@ -90,7 +96,7 @@ class OFnUINodeItem(QtWidgets.QGraphicsItemGroup):
         rect_height = NODE_DEFAULT_HEGIHT * max(node.needs(), 1)
 
         self.__body = OFnUINodeBody(self.__node.needs(), self.__node.packetable(), parent=self)
-        self.__body.setPos(0, NODE_DEFAULT_HEGIHT)
+        self.__body.setPos(0, self.__label.boundingRect().height() + 6)
         self.addToGroup(self.__body)
 
     def paint(self, painter, option, widget):
