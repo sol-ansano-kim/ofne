@@ -6,7 +6,8 @@ from ..core.opManager import manager as op_manager
 from ..core.scene import OFnScene
 
 
-NODE_SIZE_UNIT = 100
+NODE_DEFAULT_WIDTH = 100
+NODE_DEFAULT_HEGIHT = 20
 
 
 class OFnUIOpSelector(QtWidgets.QLineEdit):
@@ -48,36 +49,55 @@ class OFnUIOpSelector(QtWidgets.QLineEdit):
         self.hide()
 
 
-class OFnUINodeRect(QtWidgets.QGraphicsRectItem):
-    def __init__(self, parent=None):
-        super(OFnUINodeRect, self).__init__(parent=parent)
-        self.setFlags(QtWidgets.QGraphicsRectItem.ItemIsMovable | QtWidgets.QGraphicsRectItem.ItemIsSelectable | QtWidgets.QGraphicsRectItem.ItemIsFocusable)
-        # self.setBrush(QtGui.QBrush(QtCore.Qt.yellow, QtCore.Qt.SolidPattern))
+class OFnUINodeBody(QtWidgets.QGraphicsPathItem):
+    def __init__(self, needs, out, parent=None):
+        super(OFnUINodeBody, self).__init__(parent=parent)
+        self.__normal_brush = QtGui.QBrush(QtGui.QColor(31, 41, 31), QtCore.Qt.SolidPattern)
+        self.__selected_brush = QtGui.QBrush(QtGui.QColor(71, 81, 71), QtCore.Qt.SolidPattern)
+        rect_height = NODE_DEFAULT_HEGIHT * max(needs, 1)
+        path = QtGui.QPainterPath()
+        path.addRoundedRect(0, 0, NODE_DEFAULT_WIDTH, rect_height, 5, 5)
+        self.setPath(path)
 
     def paint(self, painter, option, widget):
-        if self.isSelected():
-            self.setBrush(QtGui.QBrush(QtCore.Qt.red, QtCore.Qt.SolidPattern))
-        else:
-            self.setBrush(QtGui.QBrush(QtCore.Qt.yellow, QtCore.Qt.SolidPattern))
+        self.setBrush(self.__selected_brush if self.isSelected() else self.__normal_brush)
+        super(OFnUINodeBody, self).paint(painter, option, widget)
 
-        super(OFnUINodeRect, self).paint(painter, option, widget)
+
+class OFnUINodeLabel(QtWidgets.QGraphicsSimpleTextItem):
+    def __init__(self, name, parent=None):
+        super(OFnUINodeLabel, self).__init__(name, parent=parent)
+        self.__normal_pen = QtGui.QPen(QtGui.QColor(150, 164, 176))
+        self.__selected_pen = QtGui.QPen(QtGui.QColor(78, 201, 176))
+
+    def paint(self, painter, option, widget):
+        self.setPen(self.__selected_pen if self.isSelected() else self.__normal_pen)
+        super(OFnUINodeLabel, self).paint(painter, option, widget)
 
 
 class OFnUINodeItem(QtWidgets.QGraphicsItemGroup):
     def __init__(self, node, parent=None):
         super(OFnUINodeItem, self).__init__(parent=parent)
         self.__node = node
-        height = NODE_SIZE_UNIT * max(node.needs(), 1)
 
         self.setFlags(QtWidgets.QGraphicsRectItem.ItemIsMovable | QtWidgets.QGraphicsRectItem.ItemIsSelectable | QtWidgets.QGraphicsRectItem.ItemIsFocusable)
-        self.__rect = OFnUINodeRect(parent=self)
-        self.__rect.setRect(
-            0,
-            0,
-            NODE_SIZE_UNIT,
-            height
-        )
-        self.addToGroup(self.__rect)
+
+        # label
+        self.__label = OFnUINodeLabel(node.name(), parent=self)
+        self.addToGroup(self.__label)
+
+        # body
+        rect_height = NODE_DEFAULT_HEGIHT * max(node.needs(), 1)
+
+        self.__body = OFnUINodeBody(self.__node.needs(), self.__node.packetable(), parent=self)
+        self.__body.setPos(0, NODE_DEFAULT_HEGIHT)
+        self.addToGroup(self.__body)
+
+    def paint(self, painter, option, widget):
+        pass
+
+    def node(self):
+        return self.__node
 
     def mouseReleaseEvent(self, event):
         super(OFnUINodeItem, self).mouseReleaseEvent(event)
@@ -99,7 +119,11 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         if n is not None:
             item = OFnUINodeItem(n)
             self.__graphic_scene.addItem(item)
-            item.setPos(self.mapToScene(self.mapFromGlobal(QtGui.QCursor.pos())))
+            pos = self.mapToScene(self.mapFromGlobal(QtGui.QCursor.pos()))
+            item.setPos(
+                pos.x() - item.boundingRect().width() * 0.5,
+                pos.y() - item.boundingRect().height() * 0.5,
+            )
 
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_Tab:
