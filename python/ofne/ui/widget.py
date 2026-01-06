@@ -54,13 +54,23 @@ class OFnUINodeBody(QtWidgets.QGraphicsPathItem):
         super(OFnUINodeBody, self).__init__(parent=parent)
         self.__normal_brush = QtGui.QBrush(QtGui.QColor(51, 49, 58), QtCore.Qt.SolidPattern)
         self.__selected_brush = QtGui.QBrush(QtGui.QColor(81, 83, 102), QtCore.Qt.SolidPattern)
+        self.__normal_pen = QtGui.QPen(QtCore.Qt.gray)
+        self.__selected_pen = QtGui.QPen(QtCore.Qt.white)
         rect_height = NODE_DEFAULT_HEGIHT * max(needs, 1)
         path = QtGui.QPainterPath()
         path.addRoundedRect(0, 0, NODE_DEFAULT_WIDTH, rect_height, 5, 5)
         self.setPath(path)
 
     def paint(self, painter, option, widget):
-        self.setBrush(self.__selected_brush if self.isSelected() else self.__normal_brush)
+        brush = self.__normal_brush
+        pen = self.__normal_pen
+        if self.isSelected():
+            brush = self.__selected_brush
+            pen = self.__selected_pen
+
+        self.setBrush(brush)
+        self.setPen(pen)
+
         super(OFnUINodeBody, self).paint(painter, option, widget)
 
 
@@ -68,8 +78,8 @@ class OFnUINodeLabel(QtWidgets.QGraphicsSimpleTextItem):
     def __init__(self, name, parent=None):
         super(OFnUINodeLabel, self).__init__(parent=parent)
         self.setLabel(name)
-        self.__normal_pen = QtGui.QPen(QtGui.QColor(210, 204, 216))
-        self.__selected_pen = QtGui.QPen(QtGui.QColor(124, 125, 255))
+        self.__normal_pen = QtGui.QPen(QtCore.Qt.gray)
+        self.__selected_pen = QtGui.QPen(QtCore.Qt.white)
 
     def setLabel(self, name):
         frect = QtGui.QFontMetrics(self.font()).boundingRect(name)
@@ -79,6 +89,15 @@ class OFnUINodeLabel(QtWidgets.QGraphicsSimpleTextItem):
     def paint(self, painter, option, widget):
         self.setPen(self.__selected_pen if self.isSelected() else self.__normal_pen)
         super(OFnUINodeLabel, self).paint(painter, option, widget)
+
+
+class OFnUIPort(QtWidgets.QGraphicsEllipseItem):
+    def __init__(self, parent=None):
+        super(OFnUIPort, self).__init__(parent=parent)
+        self.__normal_brush = QtGui.QBrush(QtGui.QColor(102, 208, 153), QtCore.Qt.SolidPattern)
+        self.setRect(0, 0, NODE_DEFAULT_HEGIHT * 0.55, NODE_DEFAULT_HEGIHT * 0.5)
+        self.setBrush(self.__normal_brush)
+        self.setPen(QtCore.Qt.NoPen)
 
 
 class OFnUINodeItem(QtWidgets.QGraphicsItemGroup):
@@ -92,11 +111,23 @@ class OFnUINodeItem(QtWidgets.QGraphicsItemGroup):
         self.__label = OFnUINodeLabel(node.name(), parent=self)
         self.addToGroup(self.__label)
 
+        body_start = self.__label.boundingRect().height() + 6
+
+        # port
+        for i in range(self.__node.needs()):
+            port = OFnUIPort(parent=self)
+            prect = port.rect()
+            port.setPos(prect.width() * -0.5, body_start + (NODE_DEFAULT_HEGIHT * (i + 0.5)) - (prect.height() * 0.5))
+
+        if self.__node.packetable():
+            port = OFnUIPort(parent=self)
+            prect = port.rect()
+            port.setPos(NODE_DEFAULT_WIDTH + prect.width() * -0.5, body_start + (NODE_DEFAULT_HEGIHT * (0.5)) - (prect.height() * 0.5))
+
         # body
         rect_height = NODE_DEFAULT_HEGIHT * max(node.needs(), 1)
-
         self.__body = OFnUINodeBody(self.__node.needs(), self.__node.packetable(), parent=self)
-        self.__body.setPos(0, self.__label.boundingRect().height() + 6)
+        self.__body.setPos(0, body_start)
         self.addToGroup(self.__body)
 
     def paint(self, painter, option, widget):
