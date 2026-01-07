@@ -1,3 +1,4 @@
+import enum
 from PySide6 import QtWidgets
 from PySide6 import QtCore
 from PySide6 import QtGui
@@ -8,6 +9,11 @@ from ..core.scene import OFnScene
 
 NODE_DEFAULT_WIDTH = 100
 NODE_DEFAULT_HEGIHT = 30
+
+
+class PortDirection(enum.Enum):
+    Input = 0
+    Output = 1
 
 
 class OFnUIOpSelector(QtWidgets.QLineEdit):
@@ -93,9 +99,15 @@ class OFnUINodeLabel(QtWidgets.QGraphicsSimpleTextItem):
         super(OFnUINodeLabel, self).paint(painter, option, widget)
 
 
-class OFnUIPort(QtWidgets.QGraphicsEllipseItem):
-    def __init__(self, parent=None):
-        super(OFnUIPort, self).__init__(parent=parent)
+class OFnUIPort(QtCore.QObject, QtWidgets.QGraphicsEllipseItem):
+    portClicked = QtCore.Signal(QtWidgets.QGraphicsItem, PortDirection, int)
+
+    def __init__(self, direction, index, parent=None):
+        QtCore.QObject.__init__(self)
+        QtWidgets.QGraphicsEllipseItem.__init__(self, parent=parent)
+        # super(OFnUIPort, self).__init__(parent=parent)
+        self.__index = index
+        self.__direction = direction
         self.__hover = False
         self.__normal_brush = QtGui.QBrush(QtGui.QColor(50, 208, 103), QtCore.Qt.SolidPattern)
         self.__hover_brush = QtGui.QBrush(QtGui.QColor(102, 228, 153), QtCore.Qt.SolidPattern)
@@ -106,6 +118,12 @@ class OFnUIPort(QtWidgets.QGraphicsEllipseItem):
         self.setBrush(self.__normal_brush)
         self.setPen(QtCore.Qt.NoPen)
         self.setAcceptHoverEvents(True)
+
+    def index(self):
+        return self.__index
+
+    def direction(self):
+        return self.__direction
 
     def hoverEnterEvent(self, event):
         self.__hover = True
@@ -128,12 +146,16 @@ class OFnUIPort(QtWidgets.QGraphicsEllipseItem):
         super(OFnUIPort, self).paint(painter, option, widget)
 
     def mousePressEvent(self, event):
-        pass
+        if event.button() == QtCore.Qt.LeftButton:
+            self.portClicked.emit(self, self.__direction, self.__index)
 
 
-class OFnUINodeItem(QtWidgets.QGraphicsItemGroup):
+class OFnUINodeItem(QtCore.QObject, QtWidgets.QGraphicsItemGroup):
+    portClicked = QtCore.Signal(QtWidgets.QGraphicsItem, PortDirection, int)
+
     def __init__(self, node, parent=None):
-        super(OFnUINodeItem, self).__init__(parent=parent)
+        QtCore.QObject.__init__(self)
+        QtWidgets.QGraphicsItemGroup.__init__(self, parent=parent)
         self.setHandlesChildEvents(False)
         self.__node = node
 
@@ -153,16 +175,18 @@ class OFnUINodeItem(QtWidgets.QGraphicsItemGroup):
 
         # port
         for i in range(self.__node.needs()):
-            port = OFnUIPort(parent=self)
+            port = OFnUIPort(PortDirection.Input, i, parent=self)
             prect = port.rect()
             port.setPos(prect.width() * -0.5, body_start + (NODE_DEFAULT_HEGIHT * (i + 0.5)) - (prect.height() * 0.5))
             self.addToGroup(port)
+            port.portClicked.connect(self.portClicked.emit)
 
         if self.__node.packetable():
-            port = OFnUIPort(parent=self)
+            port = OFnUIPort(PortDirection.Output, 0, parent=self)
             prect = port.rect()
             port.setPos(NODE_DEFAULT_WIDTH + prect.width() * -0.5, body_start + (NODE_DEFAULT_HEGIHT * (0.5)) - (prect.height() * 0.5))
             self.addToGroup(port)
+            port.portClicked.connect(self.portClicked.emit)
 
     def paint(self, painter, option, widget):
         # cancel focus drawing
@@ -188,6 +212,9 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         self.__op_selector = OFnUIOpSelector(parent=self)
         self.__op_selector.OpSelected.connect(self.__onOpCreateRequested)
 
+    def __showConnector(self, item, direction, index):
+        print(item, direction, index)
+
     def __onOpCreateRequested(self, name):
         n = self.__scene.createNode(name)
         if n is not None:
@@ -198,6 +225,8 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
                 pos.x() - item.boundingRect().width() * 0.5,
                 pos.y() - item.boundingRect().height() * 0.5,
             )
+
+            item.portClicked.connect(self.__showConnector)
 
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_Tab:
