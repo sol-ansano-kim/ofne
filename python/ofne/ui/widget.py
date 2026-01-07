@@ -56,6 +56,8 @@ class OFnUINodeBody(QtWidgets.QGraphicsPathItem):
         self.__selected_brush = QtGui.QBrush(QtGui.QColor(81, 83, 102), QtCore.Qt.SolidPattern)
         self.__normal_pen = QtGui.QPen(QtCore.Qt.gray)
         self.__selected_pen = QtGui.QPen(QtCore.Qt.white)
+        self.__normal_pen.setWidth(2)
+        self.__selected_pen.setWidth(4)
         rect_height = NODE_DEFAULT_HEGIHT * max(needs, 1)
         path = QtGui.QPainterPath()
         path.addRoundedRect(0, 0, NODE_DEFAULT_WIDTH, rect_height, 5, 5)
@@ -94,18 +96,48 @@ class OFnUINodeLabel(QtWidgets.QGraphicsSimpleTextItem):
 class OFnUIPort(QtWidgets.QGraphicsEllipseItem):
     def __init__(self, parent=None):
         super(OFnUIPort, self).__init__(parent=parent)
-        self.__normal_brush = QtGui.QBrush(QtGui.QColor(102, 208, 153), QtCore.Qt.SolidPattern)
-        self.setRect(0, 0, NODE_DEFAULT_HEGIHT * 0.55, NODE_DEFAULT_HEGIHT * 0.5)
+        self.__hover = False
+        self.__normal_brush = QtGui.QBrush(QtGui.QColor(50, 208, 103), QtCore.Qt.SolidPattern)
+        self.__hover_brush = QtGui.QBrush(QtGui.QColor(102, 228, 153), QtCore.Qt.SolidPattern)
+        self.__hover_pen = QtGui.QPen(QtCore.Qt.white)
+        self.__hover_pen.setWidth(2)
+        self.setRect(0, 0, NODE_DEFAULT_HEGIHT * 0.5, NODE_DEFAULT_HEGIHT * 0.5)
+        self.setTransformOriginPoint(self.boundingRect().center())
         self.setBrush(self.__normal_brush)
         self.setPen(QtCore.Qt.NoPen)
+        self.setAcceptHoverEvents(True)
+
+    def hoverEnterEvent(self, event):
+        self.__hover = True
+        self.setScale(1.2)
+
+    def hoverLeaveEvent(self, event):
+        self.__hover = False
+        self.setScale(1)
+
+    def paint(self, painter, option, widget):
+        brush = self.__normal_brush
+        pen = QtCore.Qt.NoPen
+        if self.isSelected() or self.__hover:
+            brush = self.__hover_brush
+            pen = self.__hover_pen
+
+        self.setBrush(brush)
+        self.setPen(pen)
+
+        super(OFnUIPort, self).paint(painter, option, widget)
+
+    def mousePressEvent(self, event):
+        pass
 
 
 class OFnUINodeItem(QtWidgets.QGraphicsItemGroup):
     def __init__(self, node, parent=None):
         super(OFnUINodeItem, self).__init__(parent=parent)
+        self.setHandlesChildEvents(False)
         self.__node = node
 
-        self.setFlags(QtWidgets.QGraphicsRectItem.ItemIsMovable | QtWidgets.QGraphicsRectItem.ItemIsSelectable | QtWidgets.QGraphicsRectItem.ItemIsFocusable)
+        self.setFlags(QtWidgets.QGraphicsRectItem.ItemIsMovable | QtWidgets.QGraphicsRectItem.ItemIsSelectable)
 
         # label
         self.__label = OFnUINodeLabel(node.name(), parent=self)
@@ -113,36 +145,41 @@ class OFnUINodeItem(QtWidgets.QGraphicsItemGroup):
 
         body_start = self.__label.boundingRect().height() + 6
 
-        # port
-        for i in range(self.__node.needs()):
-            port = OFnUIPort(parent=self)
-            prect = port.rect()
-            port.setPos(prect.width() * -0.5, body_start + (NODE_DEFAULT_HEGIHT * (i + 0.5)) - (prect.height() * 0.5))
-
-        if self.__node.packetable():
-            port = OFnUIPort(parent=self)
-            prect = port.rect()
-            port.setPos(NODE_DEFAULT_WIDTH + prect.width() * -0.5, body_start + (NODE_DEFAULT_HEGIHT * (0.5)) - (prect.height() * 0.5))
-
         # body
         rect_height = NODE_DEFAULT_HEGIHT * max(node.needs(), 1)
         self.__body = OFnUINodeBody(self.__node.needs(), self.__node.packetable(), parent=self)
         self.__body.setPos(0, body_start)
         self.addToGroup(self.__body)
 
+        # port
+        for i in range(self.__node.needs()):
+            port = OFnUIPort(parent=self)
+            prect = port.rect()
+            port.setPos(prect.width() * -0.5, body_start + (NODE_DEFAULT_HEGIHT * (i + 0.5)) - (prect.height() * 0.5))
+            self.addToGroup(port)
+
+        if self.__node.packetable():
+            port = OFnUIPort(parent=self)
+            prect = port.rect()
+            port.setPos(NODE_DEFAULT_WIDTH + prect.width() * -0.5, body_start + (NODE_DEFAULT_HEGIHT * (0.5)) - (prect.height() * 0.5))
+            self.addToGroup(port)
+
     def paint(self, painter, option, widget):
+        # cancel focus drawing
         pass
 
     def node(self):
         return self.__node
 
-    def mouseReleaseEvent(self, event):
-        super(OFnUINodeItem, self).mouseReleaseEvent(event)
-
 
 class OFnUINodeGraph(QtWidgets.QGraphicsView):
     def __init__(self, scene=None, parent=None):
         super(OFnUINodeGraph, self).__init__(parent=parent)
+        pal = self.palette()
+        pal.setColor(QtGui.QPalette.Window, QtGui.QColor(25, 25, 25))
+        pal.setColor(QtGui.QPalette.Text, QtGui.QColor(220, 220, 220))
+        self.setPalette(pal)
+
         self.__scene = scene if isinstance(scene, OFnScene) else OFnScene()
 
         self.__graphic_scene = QtWidgets.QGraphicsScene()
