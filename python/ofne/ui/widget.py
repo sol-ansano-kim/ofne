@@ -6,6 +6,7 @@ from PySide6 import QtGui
 from ..core.opManager import manager as op_manager
 from ..core.scene import OFnScene
 from ..core.node import OFnNode
+from . import model
 
 
 NODE_DEFAULT_WIDTH = 100
@@ -101,7 +102,7 @@ class OFnUINodeLabel(QtWidgets.QGraphicsSimpleTextItem):
 
 
 class OFnUIPort(QtCore.QObject, QtWidgets.QGraphicsEllipseItem):
-    portClicked = QtCore.Signal(QtWidgets.QGraphicsItem, PortDirection, int)
+    portClicked = QtCore.Signal(QtWidgets.QGraphicsItem)
 
     def __init__(self, direction, index, parent=None):
         QtCore.QObject.__init__(self)
@@ -129,6 +130,12 @@ class OFnUIPort(QtCore.QObject, QtWidgets.QGraphicsEllipseItem):
     def direction(self):
         return self.__direction
 
+    def node(self):
+        if isinstance(self.__parent, OFnUINodeItem):
+            return self.__parent.node()
+
+        return None
+
     def hoverEnterEvent(self, event):
         self.__hover = True
         self.setScale(1.2)
@@ -151,17 +158,19 @@ class OFnUIPort(QtCore.QObject, QtWidgets.QGraphicsEllipseItem):
 
     def mousePressEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:
-            self.portClicked.emit(self, self.__direction, self.__index)
+            self.portClicked.emit(self)
 
 
 class OFnUINodeItem(QtCore.QObject, QtWidgets.QGraphicsItemGroup):
-    portClicked = QtCore.Signal(OFnNode, QtWidgets.QGraphicsItem, PortDirection, int)
+    portClicked = QtCore.Signal(QtWidgets.QGraphicsItem)
 
     def __init__(self, node, parent=None):
         QtCore.QObject.__init__(self)
         QtWidgets.QGraphicsItemGroup.__init__(self, parent=parent)
         self.setHandlesChildEvents(False)
         self.__node = node
+        self.__inputs = []
+        self.__output = None
 
         self.setFlags(QtWidgets.QGraphicsRectItem.ItemIsMovable | QtWidgets.QGraphicsRectItem.ItemIsSelectable)
 
@@ -183,17 +192,22 @@ class OFnUINodeItem(QtCore.QObject, QtWidgets.QGraphicsItemGroup):
             prect = port.rect()
             port.setPos(prect.width() * -0.5, body_start + (NODE_DEFAULT_HEGIHT * (i + 0.5)) - (prect.height() * 0.5))
             self.addToGroup(port)
-            port.portClicked.connect(self.__onPortClicked)
+            port.portClicked.connect(self.portClicked.emit)
+            self.__inputs.append(port)
 
         if self.__node.packetable():
             port = OFnUIPort(PortDirection.Output, 0, parent=self)
             prect = port.rect()
             port.setPos(NODE_DEFAULT_WIDTH + prect.width() * -0.5, body_start + (NODE_DEFAULT_HEGIHT * (0.5)) - (prect.height() * 0.5))
             self.addToGroup(port)
-            port.portClicked.connect(self.__onPortClicked)
+            port.portClicked.connect(self.portClicked.emit)
+            self.__output = port
 
-    def __onPortClicked(self, item, direction, index):
-        self.portClicked.emit(self.__node, item, direction, index)
+    def input(self, index):
+        return self.__inputs[index]
+
+    def output(self):
+        return self.__output
 
     def paint(self, painter, option, widget):
         # cancel focus drawing
@@ -203,51 +217,102 @@ class OFnUINodeItem(QtCore.QObject, QtWidgets.QGraphicsItemGroup):
         return self.__node
 
 
+class OFnUIConnection(QtWidgets.QGraphicsPathItem):
+    def __init__(self, src, dst, parent=None):
+        super(OFnUIConnection, self).__init__(parent=parent)
+        self.__src = src
+        self.__dst = dst
+
+        pen = QtGui.QPen(QtGui.Qt.white)
+        pen.setWidth(2)
+        self.setPen(pen)
+
+    def paint(self, painter, option, widget):
+        st_pos = self.mapFromScene(self.__src.centerPos()) + QtCore.QPoint(self.__src.boundingRect().width() * 0.5, 0)
+        ed_pos = self.mapFromScene(self.__dst.centerPos()) - QtCore.QPoint(self.__src.boundingRect().width() * 0.5, 0)
+        c1 = QtCore.QPoint(st_pos.x() + 50, st_pos.y())
+        c2 = QtCore.QPoint(ed_pos.x() - 50, ed_pos.y())
+        path = QtGui.QPainterPath()
+        path.moveTo(st_pos)
+        path.cubicTo(c1, c2, ed_pos)
+        self.setPath(path)
+
+        super(OFnUIConnection, self).paint(painter, option, widget)
+
+
 class OFnUIConnector(QtWidgets.QGraphicsPathItem):
-    def __init__(self, start_item, direction, parent=None):
+    def __init__(self, item, direction, parent=None):
         super(OFnUIConnector, self).__init__(parent=parent)
-        self.__start_item = start_item
-        self.__normal_pen = QtGui.QPen(QtCore.Qt.white)
-        self.__normal_pen.setWidth(2)
-        self.setPen(self.__normal_pen)
+        self.__direction = direction
+        self.__item = item
+        pen = QtGui.QPen(QtGui.Qt.white)
+        pen.setStyle(QtCore.Qt.DashLine)
+        pen.setWidth(2)
+        self.setPen(pen)
+
+    def item(self):
+        return self.__item
 
     def updatePos(self, pos):
+        factor = -1 if self.__direction == PortDirection.Input else 1
         path = QtGui.QPainterPath()
-        st_pos = self.mapFromScene(self.__start_item.centerPos())
+        st_pos = self.mapFromScene(self.__item.centerPos()) + (QtCore.QPoint(self.__item.boundingRect().width() * 0.5, 0) * factor)
         path.moveTo(st_pos)
-        path.cubicTo(st_pos, st_pos, pos)
+        c1 = QtCore.QPoint(st_pos.x() + 50 * factor, st_pos.y())
+        c2 = QtCore.QPoint(pos.x() + 50 * -factor, pos.y())
+        path.cubicTo(c1, c2, pos)
+
         self.setPath(path)
 
 
 class OFnUINodeGraph(QtWidgets.QGraphicsView):
     def __init__(self, scene=None, parent=None):
         super(OFnUINodeGraph, self).__init__(parent=parent)
-        self.setMouseTracking(True)
+        self.__nodes = {}
+        self.__connections = {}
+        self.__connector = None
+
+        self.__scene = model.OFnUIScene(scene if isinstance(scene, OFnScene) else OFnScene())
+
+        self.__graphic_scene = QtWidgets.QGraphicsScene()
+        self.setScene(self.__graphic_scene)
+
+        self.__op_selector = OFnUIOpSelector(parent=self)
+
+        self.__op_selector.OpSelected.connect(self.__onOpCreateRequested)
+        self.__scene.connected.connect(self.__connected)
+        self.__scene.disconnected.connect(self.__disconnected)
 
         pal = self.palette()
         pal.setColor(QtGui.QPalette.Window, QtGui.QColor(25, 25, 25))
         pal.setColor(QtGui.QPalette.Text, QtGui.QColor(220, 220, 220))
         self.setPalette(pal)
 
-        self.__connector = None
+        self.setMouseTracking(True)
 
-        self.__scene = scene if isinstance(scene, OFnScene) else OFnScene()
+    def __connected(self, hash):
+        srch, dsth, index = hash
+        src = self.__nodes[srch].output()
+        dst = self.__nodes[dsth].input(index)
+        con = OFnUIConnection(src, dst)
+        self.__graphic_scene.addItem(con)
+        self.__connections[hash] = con
 
-        self.__graphic_scene = QtWidgets.QGraphicsScene()
-        self.setScene(self.__graphic_scene)
+    def __disconnected(self, hash):
+        con = self.__connections.pop(hash, None)
+        if con:
+            self.__graphic_scene.removeItem(con)
 
-        self.__op_selector = OFnUIOpSelector(parent=self)
-        self.__op_selector.OpSelected.connect(self.__onOpCreateRequested)
-
-    def __showConnector(self, node, item, direction, index):
+    def __showConnector(self, item):
         if self.__connector is None:
-            self.__connector = OFnUIConnector(item, direction)
+            self.__connector = OFnUIConnector(item, item.direction())
             self.__graphic_scene.addItem(self.__connector)
 
     def __onOpCreateRequested(self, name):
         n = self.__scene.createNode(name)
         if n is not None:
             item = OFnUINodeItem(n)
+            self.__nodes[n.__hash__()] = item
             self.__graphic_scene.addItem(item)
             pos = self.mapToScene(self.mapFromGlobal(QtGui.QCursor.pos()))
             item.setPos(
@@ -264,7 +329,22 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
     def mousePressEvent(self, event):
         if self.__connector:
             self.__graphic_scene.removeItem(self.__connector)
+
+            item_at = self.itemAt(self.mapFromGlobal(QtGui.QCursor.pos()))
+            if isinstance(item_at, OFnUIPort):
+                start_item = self.__connector.item()
+                if start_item.node() != item_at.node() and start_item.direction() != item_at.direction():
+                    if start_item.direction() == PortDirection.Input:
+                        src = item_at
+                        dst = start_item
+                    else:
+                        src = start_item
+                        dst = item_at
+
+                    self.__scene.connect(src.node(), dst.node(), dst.index())
+
             self.__connector = None
+            return
 
         super(OFnUINodeGraph, self).mousePressEvent(event)
 
