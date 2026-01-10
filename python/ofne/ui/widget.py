@@ -288,6 +288,8 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         pal.setColor(QtGui.QPalette.Text, QtGui.QColor(220, 220, 220))
         self.setPalette(pal)
 
+        self.setResizeAnchor(QtWidgets.QGraphicsView.AnchorUnderMouse)
+
         self.setMouseTracking(True)
 
     def __connected(self, hash):
@@ -325,6 +327,21 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_Tab:
             self.__op_selector.show(self.mapFromGlobal(QtGui.QCursor.pos()))
+
+    def wheelEvent(self, event):
+        delta = 0
+        if event.source() == QtCore.Qt.MouseEventSynthesizedBySystem:
+            delta = event.pixelDelta().y()
+        else:
+            delta = event.angleDelta().y()
+
+        if delta == 0:
+            return
+
+        if delta > 0:
+            self.scale(1.05, 1.05)
+        else:
+            self.scale(0.95, 0.95)
 
     def mousePressEvent(self, event):
         if self.__connector:
