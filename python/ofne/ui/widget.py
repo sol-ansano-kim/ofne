@@ -327,6 +327,28 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_Tab:
             self.__op_selector.show(self.mapFromGlobal(QtGui.QCursor.pos()))
+        elif event.key() == QtCore.Qt.Key_F:
+            self.fit()
+        elif event.key() == QtCore.Qt.Key_Delete:
+            pass
+
+    def fit(self):
+        rect = QtCore.QRect()
+        selected = self.__graphic_scene.selectedItems()
+        if len(selected) == 0:
+            rect = self.__graphic_scene.itemsBoundingRect()
+        else:
+            for sel in selected:
+                to_scene = sel.mapToScene(sel.boundingRect())
+                if isinstance(to_scene, (QtGui.QPolygonF, QtGui.QPolygon)):
+                    to_scene = to_scene.boundingRect()
+
+                if isinstance(to_scene, QtCore.QRectF):
+                    to_scene = to_scene.toRect()
+
+                rect = rect.united(to_scene)
+
+        self.fitInView(rect, QtCore.Qt.KeepAspectRatio)
 
     def wheelEvent(self, event):
         delta = 0
