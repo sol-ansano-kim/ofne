@@ -291,6 +291,7 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         self.setResizeAnchor(QtWidgets.QGraphicsView.AnchorUnderMouse)
 
         self.setMouseTracking(True)
+        self.setDragMode(QtWidgets.QGraphicsView.RubberBandDrag)
 
     def __connected(self, hash):
         srch, dsth, index = hash
