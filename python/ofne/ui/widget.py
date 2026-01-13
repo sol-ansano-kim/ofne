@@ -227,7 +227,7 @@ class OFnUIConnection(QtWidgets.QGraphicsPathItem):
         pen.setWidth(2)
         self.setPen(pen)
 
-    def paint(self, painter, option, widget):
+    def updatePos(self):
         st_pos = self.mapFromScene(self.__src.centerPos()) + QtCore.QPoint(self.__src.boundingRect().width() * 0.5, 0)
         ed_pos = self.mapFromScene(self.__dst.centerPos()) - QtCore.QPoint(self.__src.boundingRect().width() * 0.5, 0)
         c1 = QtCore.QPoint(st_pos.x() + 50, st_pos.y())
@@ -237,6 +237,8 @@ class OFnUIConnection(QtWidgets.QGraphicsPathItem):
         path.cubicTo(c1, c2, ed_pos)
         self.setPath(path)
 
+    def paint(self, painter, option, widget):
+        self.updatePos()
         super(OFnUIConnection, self).paint(painter, option, widget)
 
 
@@ -253,7 +255,7 @@ class OFnUIConnector(QtWidgets.QGraphicsPathItem):
     def item(self):
         return self.__item
 
-    def updatePos(self, pos):
+    def setEndPos(self, pos):
         factor = -1 if self.__direction == PortDirection.Input else 1
         path = QtGui.QPainterPath()
         st_pos = self.mapFromScene(self.__item.centerPos()) + (QtCore.QPoint(self.__item.boundingRect().width() * 0.5, 0) * factor)
@@ -305,6 +307,7 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         src = self.__nodes[srch].output()
         dst = self.__nodes[dsth].input(index)
         con = OFnUIConnection(src, dst)
+        con.updatePos()
         self.__graphic_scene.addItem(con)
         self.__connections[hash] = con
 
@@ -414,7 +417,7 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
             return
 
         if self.__connector:
-            self.__connector.updatePos(self.mapToScene(self.mapFromGlobal(QtGui.QCursor.pos())))
+            self.__connector.setEndPos(self.mapToScene(self.mapFromGlobal(QtGui.QCursor.pos())))
 
         super(OFnUINodeGraph, self).mouseMoveEvent(event)
 
