@@ -271,6 +271,8 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         self.__nodes = {}
         self.__connections = {}
         self.__connector = None
+        self.__move_scene = False
+        self.__old_scene_pos = None
 
         self.__scene = model.OFnUIScene(scene if isinstance(scene, OFnScene) else OFnScene())
 
@@ -288,7 +290,12 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         pal.setColor(QtGui.QPalette.Text, QtGui.QColor(220, 220, 220))
         self.setPalette(pal)
 
-        self.setResizeAnchor(QtWidgets.QGraphicsView.AnchorUnderMouse)
+        self.setTransformationAnchor(QtWidgets.QGraphicsView.AnchorUnderMouse)
+        self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.__graphic_scene.setSceneRect(0, 0, 10000, 10000)
+        self.verticalScrollBar().setValue(5000)
+        self.horizontalScrollBar().setValue(5000)
 
         self.setMouseTracking(True)
         self.setDragMode(QtWidgets.QGraphicsView.RubberBandDrag)
@@ -367,6 +374,12 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
             self.scale(0.95, 0.95)
 
     def mousePressEvent(self, event):
+        if event.button() == QtCore.Qt.MiddleButton or event.modifiers() == QtCore.Qt.AltModifier:
+            QtGui.QGuiApplication.setOverrideCursor(QtCore.Qt.OpenHandCursor)
+            self.__move_scene = True
+            self.__old_scene_pos = event.pos()
+            return
+
         if self.__connector:
             self.__graphic_scene.removeItem(self.__connector)
 
@@ -389,7 +402,25 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         super(OFnUINodeGraph, self).mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
+        if self.__move_scene:
+            cur_pos = event.pos()
+
+            if self.__old_scene_pos:
+                d = self.__old_scene_pos - cur_pos
+                self.verticalScrollBar().setValue(self.verticalScrollBar().value() + d.y())
+                self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() + d.x())
+
+            self.__old_scene_pos = cur_pos
+            return
+
         if self.__connector:
             self.__connector.updatePos(self.mapToScene(self.mapFromGlobal(QtGui.QCursor.pos())))
 
         super(OFnUINodeGraph, self).mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        QtGui.QGuiApplication.restoreOverrideCursor()
+        self.__move_scene = False
+        self.__old_scene_pos = None
+
+        super(OFnUINodeGraph, self).mouseReleaseEvent(event)
