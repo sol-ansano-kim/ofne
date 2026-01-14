@@ -88,8 +88,9 @@ class OFnUINodeLabel(QtWidgets.QGraphicsSimpleTextItem):
     def __init__(self, name, parent=None):
         super(OFnUINodeLabel, self).__init__(parent=parent)
         self.setLabel(name)
-        self.__normal_pen = QtGui.QPen(QtCore.Qt.gray)
-        self.__selected_pen = QtGui.QPen(QtCore.Qt.white)
+        self.__normal_brush = QtGui.QBrush(QtCore.Qt.gray)
+        self.__selected_brush = QtGui.QBrush(QtCore.Qt.white)
+        self.setPen(QtCore.Qt.NoPen)
 
     def setLabel(self, name):
         frect = QtGui.QFontMetrics(self.font()).boundingRect(name)
@@ -97,7 +98,7 @@ class OFnUINodeLabel(QtWidgets.QGraphicsSimpleTextItem):
         self.setText(name)
 
     def paint(self, painter, option, widget):
-        self.setPen(self.__selected_pen if self.isSelected() else self.__normal_pen)
+        self.setBrush(self.__selected_brush if self.isSelected() else self.__normal_brush)
         super(OFnUINodeLabel, self).paint(painter, option, widget)
 
 
