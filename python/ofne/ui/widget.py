@@ -221,12 +221,14 @@ class OFnUINodeItem(QtCore.QObject, QtWidgets.QGraphicsItemGroup):
 class OFnUIConnection(QtWidgets.QGraphicsPathItem):
     def __init__(self, src, dst, parent=None):
         super(OFnUIConnection, self).__init__(parent=parent)
+        self.setFlags(QtWidgets.QGraphicsRectItem.ItemIsSelectable)
         self.__src = src
         self.__dst = dst
 
-        pen = QtGui.QPen(QtGui.Qt.white)
-        pen.setWidth(2)
-        self.setPen(pen)
+        self.__normal_pen = QtGui.QPen(QtGui.Qt.gray)
+        self.__normal_pen.setWidth(2)
+        self.__selected_pen = QtGui.QPen(QtGui.Qt.white)
+        self.__selected_pen.setWidth(2)
 
     def updatePos(self):
         st_pos = self.mapFromScene(self.__src.centerPos()) + QtCore.QPoint(self.__src.boundingRect().width() * 0.5, 0)
@@ -240,8 +242,11 @@ class OFnUIConnection(QtWidgets.QGraphicsPathItem):
 
     def paint(self, painter, option, widget):
         self.updatePos()
-        super(OFnUIConnection, self).paint(painter, option, widget)
 
+        painter.save()
+        painter.setPen(self.__selected_pen if self.isSelected() else self.__normal_pen)
+        painter.drawPath(self.path())
+        painter.restore()
 
 class OFnUIConnector(QtWidgets.QGraphicsPathItem):
     def __init__(self, item, direction, parent=None):
