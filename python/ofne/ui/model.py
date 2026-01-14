@@ -18,6 +18,18 @@ class OFnUIScene(QtCore.QObject):
 
         return new_node
 
+    def deleteNode(self, node):
+        nh = node.__hash__()
+        for i, c in enumerate(node.inputs()):
+            if c is not None:
+                self.disconnect(node, i)
+
+        res = self.__scene.deleteNode(node)
+        if res and nh in self.__nodes:
+            self.__nodes.pop(nh)
+
+        return res
+
     def connect(self, src, dst, index):
         exh = None
         inputs = dst.inputs()
@@ -36,3 +48,19 @@ class OFnUIScene(QtCore.QObject):
             self.connected.emit(neh)
 
         return res
+
+    def disconnect(self, dst, index):
+        exh = None
+        inputs = dst.inputs()
+
+        if inputs[index] is None:
+            return False
+
+        if not dst.disconnect(index):
+            return False
+
+        exh = (inputs[index].__hash__(), dst.__hash__(), index)
+        self.__connections.remove(exh)
+        self.disconnected.emit(exh)
+
+        return True
