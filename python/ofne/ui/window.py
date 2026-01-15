@@ -14,20 +14,22 @@ class OFnUIMain(QtWidgets.QMainWindow):
 
         file_menu = self.menuBar().addMenu("File")
         new_action = file_menu.addAction("New")
-        save_action = file_menu.addAction("Save")
-        load_action = file_menu.addAction("Load")
+        open_action = file_menu.addAction("Open")
+        save_as_action = file_menu.addAction("SaveAs")
 
         new_action.triggered.connect(self.__new)
-        save_action.triggered.connect(self.__save)
-        load_action.triggered.connect(self.__load)
+        save_as_action.triggered.connect(self.__saveAs)
+        open_action.triggered.connect(self.__open)
 
         self.resize(800, 600)
 
     def __new(self):
         self.__graph.newScene()
 
-    def __save(self):
-        pass
+    def __saveAs(self):
+        res = QtWidgets.QFileDialog.getSaveFileName(self, "Save", "", "Ofne Scene (*.ofsn)")[0]
+        print(res)
 
-    def __load(self):
-        pass
+    def __open(self):
+        res = QtWidgets.QFileDialog.getOpenFileName(self, "Open", "", "Ofne Scene (*.ofsn)")
+        print(res)
