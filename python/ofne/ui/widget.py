@@ -308,6 +308,17 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         self.setMouseTracking(True)
         self.setDragMode(QtWidgets.QGraphicsView.RubberBandDrag)
 
+    def newScene(self):
+        old_scene = self.__scene
+        old_gscene = self.__graphic_scene
+        self.__scene = model.OFnUIScene(OFnScene())
+        self.__graphic_scene = QtWidgets.QGraphicsScene()
+        self.setScene(self.__graphic_scene)
+        self.__scene.connected.connect(self.__connected)
+        self.__scene.disconnected.connect(self.__disconnected)
+        del old_scene
+        del old_gscene
+
     def __connected(self, hash):
         srch, dsth, index = hash
         src = self.__nodes[srch].output()
