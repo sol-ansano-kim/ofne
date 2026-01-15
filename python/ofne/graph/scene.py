@@ -14,11 +14,11 @@ class OFnGraphScene(abst._GraphSceneBase):
         new_nodes = {}
 
         for sn in self.__scene.nodes():
-            n = self.__graph_nodes.get(sn.__hash__(), None)
+            n = self.__graph_nodes.get(sn.id(), None)
             if n is None:
                 n = node.OFnGraphNode(sn)
 
-            new_nodes[sn.__hash__()] = n
+            new_nodes[sn.id()] = n
 
         self.__graph_nodes = new_nodes
 
@@ -38,7 +38,7 @@ class OFnGraphScene(abst._GraphSceneBase):
 
             currents = nexts
 
-        return [self.__graph_nodes[x.__hash__()] for x in reversed(eval_nodes)]
+        return [self.__graph_nodes[x.id()] for x in reversed(eval_nodes)]
 
     def evaluate(self, nodes, force=False):
         self.__track_nodes()
@@ -50,12 +50,12 @@ class OFnGraphScene(abst._GraphSceneBase):
         while (curs):
             nexts = []
             for cur in curs:
-                if cur.node().__hash__() in dirty_set:
+                if cur.node().id() in dirty_set:
                     continue
 
                 cur.dirty()
-                dirty_set.add(cur.node().__hash__())
-                nexts.extend([self.__graph_nodes[x.__hash__()] for x in cur.node().outputs()])
+                dirty_set.add(cur.node().id())
+                nexts.extend([self.__graph_nodes[x.id()] for x in cur.node().outputs()])
 
             curs = nexts
 
@@ -72,7 +72,7 @@ class OFnGraphScene(abst._GraphSceneBase):
             for _ in range(latest_count):
                 gn = waiting.pop(0)
 
-                if gn.node().__hash__() in evaled:
+                if gn.node().id() in evaled:
                     continue
 
                 if not force and not gn.isDirty():
@@ -81,29 +81,29 @@ class OFnGraphScene(abst._GraphSceneBase):
                 ready = True
                 packets = []
                 for inn in gn.node().inputs():
-                    if inn is not None and self.__graph_nodes[inn.__hash__()].isDirty():
+                    if inn is not None and self.__graph_nodes[inn.id()].isDirty():
                         ready = False
                         break
 
                     if inn is None:
                         packets.append(packet.OFnPacket())
                     else:
-                        packets.append(self.__graph_nodes[inn.__hash__()].packet())
+                        packets.append(self.__graph_nodes[inn.id()].packet())
 
                 if not ready:
                     pending.append(gn)
                     continue
 
                 gn.evaluate(packet.OFnPacketArray(packets))
-                evaled.add(gn.node().__hash__())
+                evaled.add(gn.node().id())
 
             waiting = pending + waiting
 
     def packet(self, node):
-        if node.__hash__() not in self.__graph_nodes:
+        if node.id() not in self.__graph_nodes:
             self.__track_nodes()
 
-        gn = self.__graph_nodes.get(node.__hash__())
+        gn = self.__graph_nodes.get(node.id())
         if gn is None:
             return None
 

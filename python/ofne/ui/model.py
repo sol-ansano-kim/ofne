@@ -18,18 +18,18 @@ class OFnUIScene(QtCore.QObject):
 
     def deleteNode(self, node):
         hashes = []
-        nh = node.__hash__()
+        nh = node.id()
         for i, inn in enumerate(node.inputs()):
             if inn is None:
                 continue
 
-            exh = (inn.__hash__(), nh, i)
+            exh = (inn.id(), nh, i)
             hashes.append(exh)
 
         for opn in node.outputs():
             for i, opin in enumerate(opn.inputs()):
                 if opin == node:
-                    exh = (nh, opn.__hash__(), i)
+                    exh = (nh, opn.id(), i)
                     hashes.append(exh)
 
         if self.__scene.deleteNode(node):
@@ -45,11 +45,11 @@ class OFnUIScene(QtCore.QObject):
         exh = None
         inputs = dst.inputs()
         if inputs[index] is not None:
-            exh = (inputs[index].__hash__(), dst.__hash__(), index)
+            exh = (inputs[index].id(), dst.id(), index)
 
         res = dst.connect(src, index=index)
         if res:
-            neh = (src.__hash__(), dst.__hash__(), index)
+            neh = (src.id(), dst.id(), index)
             self.__connections.add(neh)
 
             if exh:
@@ -70,7 +70,7 @@ class OFnUIScene(QtCore.QObject):
         if not dst.disconnect(index):
             return False
 
-        exh = (inputs[index].__hash__(), dst.__hash__(), index)
+        exh = (inputs[index].id(), dst.id(), index)
         self.__connections.remove(exh)
         self.disconnected.emit(exh)
 

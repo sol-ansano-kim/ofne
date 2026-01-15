@@ -346,7 +346,7 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         n = self.__scene.createNode(name)
         if n is not None:
             item = OFnUINodeItem(n)
-            self.__nodes[n.__hash__()] = item
+            self.__nodes[n.id()] = item
             self.__graphic_scene.addItem(item)
             pos = self.mapToScene(self.mapFromGlobal(QtGui.QCursor.pos()))
             item.setPos(
@@ -378,7 +378,7 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
                 rmv_nodes.append(node_item)
 
         for rn in rmv_nodes:
-            rnh = rn.node().__hash__()
+            rnh = rn.node().id()
             if self.__scene.deleteNode(rn.node()):
                 self.__graphic_scene.removeItem(rn)
                 self.__nodes.pop(rnh)

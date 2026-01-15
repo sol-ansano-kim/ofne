@@ -24,7 +24,7 @@ class OFnGraphNode(abst._GraphNodeBase):
         inputs = []
         for inp in self.__node.inputs():
             if inp is not None:
-                inp = inp.__hash__()
+                inp = inp.id()
 
             inputs.append(inp)
 
