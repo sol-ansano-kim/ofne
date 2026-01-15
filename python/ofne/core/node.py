@@ -11,6 +11,9 @@ class OFnNode(abst._NodeBase):
         self.__name = None
         self.rename(name or self.type())
 
+    def id(self):
+        return self.__hash__()
+
     def __hash__(self):
         return self.__impl.__hash__()
 

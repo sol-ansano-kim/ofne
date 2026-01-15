@@ -14,6 +14,9 @@ class _NodeBase(object):
     def __neq__(self, other):
         raise OFnNotImplementedError(self, "__neq__")
 
+    def id(self):
+        raise OFnNotImplementedError(self, "id")
+
     def type(self):
         raise OFnNotImplementedError(self, "type")
 

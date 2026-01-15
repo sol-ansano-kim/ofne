@@ -11,7 +11,7 @@ class _OFnSceneImpl(object):
             return None
 
         node = self.__node_class(self, op, name=name)
-        self.__nodes[node.__hash__()] = node
+        self.__nodes[node.id()] = node
 
         return node
 
@@ -29,10 +29,10 @@ class _OFnSceneImpl(object):
         del node
 
     def deleteNode(self, node):
-        if node.__hash__() not in self.__nodes:
+        if node.id() not in self.__nodes:
             return False
 
-        self.__nodes.pop(node.__hash__())
+        self.__nodes.pop(node.id())
 
         self.__delNode(node)
 
@@ -88,7 +88,7 @@ class _OFnSceneImpl(object):
                 {
                     "name": n.name(),
                     "type": n.type(),
-                    "id": n.__hash__(),
+                    "id": n.id(),
                     "params": params
                 }
             )
@@ -99,8 +99,8 @@ class _OFnSceneImpl(object):
 
                 d["connections"].append(
                     {
-                        "src": inp.__hash__(),
-                        "dst": n.__hash__(),
+                        "src": inp.id(),
+                        "dst": n.id(),
                         "index": i,
                     }
                 )
