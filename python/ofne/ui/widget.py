@@ -319,6 +319,10 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         del old_scene
         del old_gscene
 
+    def saveSceneAs(self, file_path):
+        d = self.__scene.toDict()
+        print(d)
+
     def __connected(self, hash):
         srch, dsth, index = hash
         src = self.__nodes[srch].output()

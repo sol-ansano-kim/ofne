@@ -29,3 +29,6 @@ class OFnScene(abst._SceneBase):
 
     def clear(self):
         return self.__impl.clear()
+
+    def toDict(self):
+        return self.__impl.toDict()

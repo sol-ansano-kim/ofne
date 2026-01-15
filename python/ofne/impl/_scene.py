@@ -72,3 +72,37 @@ class _OFnSceneImpl(object):
             del v
 
         return True
+
+    def toDict(self):
+        d = {
+            "nodes": [],
+            "connections": []
+        }
+
+        for n in self.__nodes.values():
+            params = {}
+            for pn in n.paramNames():
+                params[pn] = n.getParamValue(pn)
+
+            d["nodes"].append(
+                {
+                    "name": n.name(),
+                    "type": n.type(),
+                    "id": n.__hash__(),
+                    "params": params
+                }
+            )
+
+            for i, inp in enumerate(n.inputs()):
+                if inp is None:
+                    continue
+
+                d["connections"].append(
+                    {
+                        "src": inp.__hash__(),
+                        "dst": n.__hash__(),
+                        "index": i,
+                    }
+                )
+
+        return d

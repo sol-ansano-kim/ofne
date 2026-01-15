@@ -10,6 +10,9 @@ class OFnUIScene(QtCore.QObject):
         self.__scene = scene
         self.__connections = set()
 
+    def toDict(self):
+        return self.__scene.toDict()
+
     def createNode(self, op_type):
         return self.__scene.createNode(op_type)
 
