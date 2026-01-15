@@ -8,27 +8,35 @@ class OFnUIScene(QtCore.QObject):
     def __init__(self, scene):
         super(OFnUIScene, self).__init__()
         self.__scene = scene
-        self.__nodes = {}
         self.__connections = set()
 
     def createNode(self, op_type):
-        new_node = self.__scene.createNode(op_type)
-        if new_node:
-            self.__nodes[new_node.__hash__()] = new_node
-
-        return new_node
+        return self.__scene.createNode(op_type)
 
     def deleteNode(self, node):
+        hashes = []
         nh = node.__hash__()
-        for i, c in enumerate(node.inputs()):
-            if c is not None:
-                self.disconnect(node, i)
+        for i, inn in enumerate(node.inputs()):
+            if inn is None:
+                continue
 
-        res = self.__scene.deleteNode(node)
-        if res and nh in self.__nodes:
-            self.__nodes.pop(nh)
+            exh = (inn.__hash__(), nh, i)
+            hashes.append(exh)
 
-        return res
+        for opn in node.outputs():
+            for i, opin in enumerate(opn.inputs()):
+                if opin == node:
+                    exh = (nh, opn.__hash__(), i)
+                    hashes.append(exh)
+
+        if self.__scene.deleteNode(node):
+            for exh in hashes:
+                self.__connections.remove(exh)
+                self.disconnected.emit(exh)
+
+            return True
+
+        return False
 
     def connect(self, src, dst, index):
         exh = None
