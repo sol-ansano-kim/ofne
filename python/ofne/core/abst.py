@@ -85,6 +85,9 @@ class _SceneBase(object):
     def clear(self):
         raise OFnNotImplementedError(self, "clear")
 
+    def toDict(self):
+        raise OFnNotImplementedError(self, "toDict")
+
 
 class _OpBase(object):
     def __init__(self):
