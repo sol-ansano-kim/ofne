@@ -1,3 +1,5 @@
+import sys
+import os
 import unittest
 import numpy as np
 
@@ -5,11 +7,11 @@ import numpy as np
 class GraphScene(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        os.environ.pop("OFNE_PLUGIN_PATH", None)
+
         try:
             from ofne.core import packet
         except:
-            import sys
-            import os
             sys.path.append((os.path.abspath(os.path.join(__file__, "../../python"))))
         finally:
             from ofne.core import node as core_node
@@ -89,6 +91,7 @@ class GraphScene(unittest.TestCase):
             cls.Output = Output()
             cls.count = 0
 
+            opManager.OFnOpManager().reloadPlugins()
             opManager.OFnOpManager().registerOp(cls.PlusOp)
             opManager.OFnOpManager().registerOp(cls.MakeNums)
             opManager.OFnOpManager().registerOp(cls.Output)
