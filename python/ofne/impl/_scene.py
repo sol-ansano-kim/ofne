@@ -1,3 +1,4 @@
+import sys
 from pprint import pprint
 
 
@@ -62,10 +63,34 @@ class _OFnSceneImpl(object):
             index += 1
 
     def read(self, filepath):
-        pass
+        with open(filepath, "r") as f:
+            d = eval(f.read().encode(sys.getfilesystemencoding()))
+
+        id_map = {}
+        for node_desc in d.get("nodes", []):
+            new_node = self.createNode(node_desc["type"], name=node_desc["name"])
+            for pk, pv in node_desc["params"].items():
+                p = new_node.getParam(pk)
+                if p is None:
+                    print(f"WARNING : no such param '{pk}'")
+                    continue
+
+                if not p.isValid(pv):
+                    print(f"WARNING : invalid value '{pv}' for '{pk}'")
+                    continue
+
+                new_node.setParamValue(pk, pv)
+
+            for uk, uv in node_desc["userData"].items():
+                new_node.setUserData(uk, uv)
+
+            id_map[node_desc["id"]] = new_node
+
+        for con in d.get("connections", []):
+            id_map[con["dst"]].connect(id_map[con["src"]], index=con["index"])
 
     def write(self, filepath):
-        with open(filepath, "w") as f:
+        with open(filepath, "w", encoding=sys.getfilesystemencoding()) as f:
             pprint(self.toDict(), f)
 
     def clear(self):

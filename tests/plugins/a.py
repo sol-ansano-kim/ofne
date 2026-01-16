@@ -1,4 +1,5 @@
 from ofne.core import op
+from ofne.core import param
 
 
 class MyOpA(op.OFnOp):
@@ -9,7 +10,10 @@ class MyOpA(op.OFnOp):
         return 0
 
     def params(self):
-        return {}
+        return {
+            "count": param.OFnParamInt(min=0),
+            "num": param.OFnParamFloat()
+        }
 
     def packetable(self):
         return True
