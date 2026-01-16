@@ -11,8 +11,8 @@ class OFnUIScene(QtCore.QObject):
         self.__scene = scene
         self.__connections = set()
 
-    def saveTo(self, file_path):
-        self.__scene.saveTo(file_path)
+    def saveTo(self, filepath):
+        self.__scene.write(filepath)
 
     def createNode(self, op_type):
         return self.__scene.createNode(op_type)

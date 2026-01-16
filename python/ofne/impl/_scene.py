@@ -1,3 +1,6 @@
+from pprint import pprint
+
+
 class _OFnSceneImpl(object):
     def __init__(self, nodeClass, opManager):
         super(_OFnSceneImpl, self).__init__()
@@ -62,7 +65,8 @@ class _OFnSceneImpl(object):
         pass
 
     def write(self, filepath):
-        pass
+        with open(filepath, "w") as f:
+            pprint(self.toDict(), f)
 
     def clear(self):
         keys = list(self.__nodes.keys())

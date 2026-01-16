@@ -103,9 +103,6 @@ class _SceneBase(object):
     def clear(self):
         raise OFnNotImplementedError(self, "clear")
 
-    def saveTo(self, file_path):
-        raise OFnNotImplementedError(self, "saveTo")
-
 
 class _OpBase(object):
     def __init__(self):
