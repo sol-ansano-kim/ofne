@@ -84,12 +84,17 @@ class _OFnSceneImpl(object):
             for pn in n.paramNames():
                 params[pn] = n.getParamValue(pn)
 
+            user_data = {}
+            for uk in n.userDataKeys():
+                user_data[uk] = n.getUserData(uk)
+
             d["nodes"].append(
                 {
                     "name": n.name(),
                     "type": n.type(),
                     "id": n.id(),
-                    "params": params
+                    "params": params,
+                    "userData": user_data
                 }
             )
 
