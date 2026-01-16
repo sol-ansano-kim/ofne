@@ -1,3 +1,4 @@
+from pprint import pprint
 from . import abst
 from . import node
 from . import opManager
@@ -30,5 +31,6 @@ class OFnScene(abst._SceneBase):
     def clear(self):
         return self.__impl.clear()
 
-    def toDict(self):
-        return self.__impl.toDict()
+    def saveTo(self, file_path):
+        with open(file_path, "w") as f:
+            pprint(self.__impl.toDict(), f)

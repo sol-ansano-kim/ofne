@@ -103,8 +103,8 @@ class _SceneBase(object):
     def clear(self):
         raise OFnNotImplementedError(self, "clear")
 
-    def toDict(self):
-        raise OFnNotImplementedError(self, "toDict")
+    def saveTo(self, file_path):
+        raise OFnNotImplementedError(self, "saveTo")
 
 
 class _OpBase(object):

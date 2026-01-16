@@ -1,5 +1,4 @@
 import os
-import pprint
 from PySide6 import QtCore
 
 
@@ -13,8 +12,7 @@ class OFnUIScene(QtCore.QObject):
         self.__connections = set()
 
     def saveTo(self, file_path):
-        with open(file_path, "w") as f:
-            pprint.pprint(self.__scene.toDict(), f)
+        self.__scene.saveTo(file_path)
 
     def createNode(self, op_type):
         return self.__scene.createNode(op_type)
