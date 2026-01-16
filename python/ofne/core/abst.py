@@ -62,6 +62,21 @@ class _NodeBase(object):
     def operate(self, packetArray):
         raise OFnNotImplementedError(self, "operate")
 
+    def userDataKeys(self):
+        raise OFnNotImplementedError(self, "userDataKeys")
+
+    def getUserData(self, key, default=None):
+        raise OFnNotImplementedError(self, "getUserData")
+
+    def setUserData(self, key, value):
+        raise OFnNotImplementedError(self, "setUserData")
+
+    def removeUserData(self, key):
+        raise OFnNotImplementedError(self, "removeUserData")
+
+    def clearUserData(self):
+        raise OFnNotImplementedError(self, "clearUserDatasetUserData")
+
 
 class _SceneBase(object):
     def __init__(self):

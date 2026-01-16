@@ -154,6 +154,23 @@ class CoreNode(unittest.TestCase):
         ip.set(2)
         self.assertEqual(ip.get(), pt1.getParamValue("int"))
 
+    def test_user_data(self):
+        ptop = self.ParamTester()
+        node = self.node.OFnNode(self.scene, ptop)
+        self.assertEqual(len(node.userDataKeys()), 0)
+        node.setUserData("a", 1)
+        self.assertEqual(node.getUserData("a", default=2), 1)
+        self.assertEqual(node.getUserData("b", default=2), 2)
+        node.setUserData("b", 3)
+        self.assertEqual(node.getUserData("b", default=2), 3)
+        self.assertEqual(node.userDataKeys(), ["a", "b"])
+        self.assertTrue(node.removeUserData("b"))
+        self.assertFalse(node.removeUserData("b"))
+        self.assertFalse(node.removeUserData("c"))
+        self.assertEqual(node.userDataKeys(), ["a"])
+        node.clearUserData()
+        self.assertEqual(len(node.userDataKeys()), 0)
+
     def test_connection(self):
         i0 = self.node.OFnNode(self.scene, self.ZeroInputs())
         i1 = self.node.OFnNode(self.scene, self.OneInputs())
