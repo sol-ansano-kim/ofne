@@ -320,8 +320,11 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         del old_gscene
 
     def saveSceneAs(self, file_path):
-        d = self.__scene.toDict()
-        print(d)
+        for node in self.__nodes.values():
+            pos = node.pos()
+            node.node().setUserData("ui:pos", (pos.x(), pos.y()))
+
+        d = self.__scene.saveTo(file_path)
 
     def __connected(self, hash):
         srch, dsth, index = hash

@@ -1,3 +1,5 @@
+import os
+import pprint
 from PySide6 import QtCore
 
 
@@ -10,8 +12,9 @@ class OFnUIScene(QtCore.QObject):
         self.__scene = scene
         self.__connections = set()
 
-    def toDict(self):
-        return self.__scene.toDict()
+    def saveTo(self, file_path):
+        with open(file_path, "w") as f:
+            pprint.pprint(self.__scene.toDict(), f)
 
     def createNode(self, op_type):
         return self.__scene.createNode(op_type)
