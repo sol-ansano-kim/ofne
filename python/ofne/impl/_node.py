@@ -12,6 +12,7 @@ class _OFnNodeImpl(object):
         self.__inputs = [None] * self.__op.needs()
         self.__params = param.OFnParams(self.__op.params())
         self.__outputs = set()
+        self.__user_data = {}
 
     def __hash__(self):
         return self.__id.int
@@ -135,3 +136,22 @@ class _OFnNodeImpl(object):
 
     def operate(self, packetArray):
         return self.__op.operate(self.__params.copy(), packetArray)
+
+    def userDataKeys(self):
+        return sorted(self.__user_data.keys())
+
+    def getUserData(self, key, default=None):
+        return self.__user_data.get(key, default)
+
+    def setUserData(self, key, value):
+        self.__user_data[key] = value
+
+    def removeUserData(self, key):
+        if key in self.__user_data:
+            self.__user_data.pop(key)
+            return True
+
+        return False
+
+    def clearUserData(self):
+        self.__user_data = {}

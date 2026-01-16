@@ -81,3 +81,18 @@ class OFnNode(abst._NodeBase):
 
     def operate(self, packetArray):
         return self.__impl.operate(packetArray)
+
+    def userDataKeys(self):
+        return self.__impl.userDataKeys()
+
+    def getUserData(self, key, default=None):
+        return self.__impl.getUserData(key, default=default)
+
+    def setUserData(self, key, value):
+        self.__impl.setUserData(key, value)
+
+    def removeUserData(self, key):
+        return self.__impl.removeUserData(key)
+
+    def clearUserData(self):
+        self.__impl.clearUserData()
