@@ -19,6 +19,8 @@ class SceneTest(unittest.TestCase):
             os.environ["OFNE_PLUGIN_PATH"] = os.path.join(__file__, "../plugins")
             cls.opManager.OFnOpManager().reloadPlugins()
 
+        cls.test_ofsn_file = os.path.join(os.path.dirname(__file__), "example")
+
     @classmethod
     def tearDownClass(cls):
         import os
@@ -29,6 +31,8 @@ class SceneTest(unittest.TestCase):
             os.environ["OFNE_PLUGIN_PATH"] = cls.orgEnv
 
         cls.opManager.OFnOpManager().reloadPlugins()
+        if os.path.isfile(cls.test_ofsn_file):
+            os.remove(cls.test_ofsn_file)
 
     def test_create(self):
         scn = self.scene.OFnScene()
@@ -131,3 +135,79 @@ class SceneTest(unittest.TestCase):
         self.assertEqual(a1.outputs(), [b2])
         self.assertEqual(a2.outputs(), [])
         self.assertEqual(b2.inputs(), [a1, None])
+
+    def __read(self):
+        try:
+            with open(self.test_ofsn_file) as f:
+                return eval(f.read())
+        except:
+            return None
+
+    def test_save_to(self):
+        import os
+
+        scn = self.scene.OFnScene()
+        a = scn.createNode("MyOpA")
+        self.assertFalse(os.path.isfile(self.test_ofsn_file))
+        scn.saveTo(self.test_ofsn_file)
+        self.assertTrue(os.path.isfile(self.test_ofsn_file))
+        d = self.__read()
+        self.assertIsNotNone(d)
+        self.assertEqual(len(d["nodes"]), 1)
+        self.assertEqual(len(d["connections"]), 0)
+
+        b1 = scn.createNode("MyOpB")
+        scn.saveTo(self.test_ofsn_file)
+        d = self.__read()
+        self.assertIsNotNone(d)
+        self.assertEqual(len(d["nodes"]), 2)
+        self.assertEqual(len(d["connections"]), 0)
+
+        self.assertTrue(b1.connect(a, index=1))
+        scn.saveTo(self.test_ofsn_file)
+        d = self.__read()
+        self.assertIsNotNone(d)
+        self.assertEqual(len(d["nodes"]), 2)
+        self.assertEqual(len(d["connections"]), 1)
+
+        self.assertTrue(b1.connect(a, index=0))
+        scn.saveTo(self.test_ofsn_file)
+        d = self.__read()
+        self.assertIsNotNone(d)
+        self.assertEqual(len(d["nodes"]), 2)
+        self.assertEqual(len(d["connections"]), 2)
+
+        b2 = scn.createNode("MyOpB")
+        scn.saveTo(self.test_ofsn_file)
+        d = self.__read()
+        self.assertIsNotNone(d)
+        self.assertEqual(len(d["nodes"]), 3)
+        self.assertEqual(len(d["connections"]), 2)
+
+        self.assertTrue(b2.connect(b1, index=0))
+        scn.saveTo(self.test_ofsn_file)
+        d = self.__read()
+        self.assertIsNotNone(d)
+        self.assertEqual(len(d["nodes"]), 3)
+        self.assertEqual(len(d["connections"]), 3)
+
+        self.assertTrue(b2.connect(b1, index=1))
+        scn.saveTo(self.test_ofsn_file)
+        d = self.__read()
+        self.assertIsNotNone(d)
+        self.assertEqual(len(d["nodes"]), 3)
+        self.assertEqual(len(d["connections"]), 4)
+
+        self.assertTrue(b2.connect(a, index=1))
+        scn.saveTo(self.test_ofsn_file)
+        d = self.__read()
+        self.assertIsNotNone(d)
+        self.assertEqual(len(d["nodes"]), 3)
+        self.assertEqual(len(d["connections"]), 4)
+
+        scn.deleteNode(b1)
+        scn.saveTo(self.test_ofsn_file)
+        d = self.__read()
+        self.assertIsNotNone(d)
+        self.assertEqual(len(d["nodes"]), 2)
+        self.assertEqual(len(d["connections"]), 1)
