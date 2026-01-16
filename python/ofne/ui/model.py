@@ -1,10 +1,13 @@
 import os
+from ..core import node
 from PySide6 import QtCore
 
 
 class OFnUIScene(QtCore.QObject):
-    connected = QtCore.Signal(tuple)
-    disconnected = QtCore.Signal(tuple)
+    nodeCreated = QtCore.Signal(node.OFnNode)
+    nodeDeleted = QtCore.Signal(str)
+    nodeConnected = QtCore.Signal(tuple)
+    nodeDisconnected = QtCore.Signal(tuple)
 
     def __init__(self, scene):
         super(OFnUIScene, self).__init__()
@@ -15,7 +18,9 @@ class OFnUIScene(QtCore.QObject):
         self.__scene.write(filepath)
 
     def createNode(self, op_type):
-        return self.__scene.createNode(op_type)
+        nn = self.__scene.createNode(op_type)
+        if nn:
+            self.nodeCreated.emit(nn)
 
     def deleteNode(self, node):
         hashes = []
@@ -36,11 +41,9 @@ class OFnUIScene(QtCore.QObject):
         if self.__scene.deleteNode(node):
             for exh in hashes:
                 self.__connections.remove(exh)
-                self.disconnected.emit(exh)
+                self.nodeDisconnected.emit(exh)
 
-            return True
-
-        return False
+            self.nodeDeleted.emit(str(nh))
 
     def connect(self, src, dst, index):
         exh = None
@@ -55,9 +58,9 @@ class OFnUIScene(QtCore.QObject):
 
             if exh:
                 self.__connections.remove(exh)
-                self.disconnected.emit(exh)
+                self.nodeDisconnected.emit(exh)
 
-            self.connected.emit(neh)
+            self.nodeConnected.emit(neh)
 
         return res
 
@@ -73,6 +76,6 @@ class OFnUIScene(QtCore.QObject):
 
         exh = (inputs[index].id(), dst.id(), index)
         self.__connections.remove(exh)
-        self.disconnected.emit(exh)
+        self.nodeDisconnected.emit(exh)
 
         return True
