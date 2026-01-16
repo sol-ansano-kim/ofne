@@ -290,8 +290,10 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         self.__op_selector = OFnUIOpSelector(parent=self)
 
         self.__op_selector.OpSelected.connect(self.__onOpCreateRequested)
-        self.__scene.connected.connect(self.__connected)
-        self.__scene.disconnected.connect(self.__disconnected)
+        self.__scene.nodeCreated.connect(self.__onNodeCreated)
+        self.__scene.nodeDeleted.connect(self.__onDeleteNode)
+        self.__scene.nodeConnected.connect(self.__onConnected)
+        self.__scene.nodeDisconnected.connect(self.__onDisconnected)
 
         pal = self.palette()
         pal.setColor(QtGui.QPalette.Window, QtGui.QColor(25, 25, 25))
@@ -314,8 +316,10 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         self.__scene = model.OFnUIScene(OFnScene())
         self.__graphic_scene = QtWidgets.QGraphicsScene()
         self.setScene(self.__graphic_scene)
-        self.__scene.connected.connect(self.__connected)
-        self.__scene.disconnected.connect(self.__disconnected)
+        self.__scene.nodeCreated.connect(self.__onNodeCreated)
+        self.__scene.nodeDeleted.connect(self.__onDeleteNode)
+        self.__scene.nodeConnected.connect(self.__onConnected)
+        self.__scene.nodeDisconnected.connect(self.__onDisconnected)
         del old_scene
         del old_gscene
 
@@ -326,7 +330,7 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
 
         d = self.__scene.saveTo(file_path)
 
-    def __connected(self, hash):
+    def __onConnected(self, hash):
         srch, dsth, index = hash
         src = self.__nodes[srch].output()
         dst = self.__nodes[dsth].input(index)
@@ -335,7 +339,7 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         self.__graphic_scene.addItem(con)
         self.__connections[hash] = con
 
-    def __disconnected(self, hash):
+    def __onDisconnected(self, hash):
         con = self.__connections.pop(hash, None)
         if con:
             self.__graphic_scene.removeItem(con)
@@ -345,17 +349,28 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
             self.__connector = OFnUIConnector(item, item.direction())
             self.__graphic_scene.addItem(self.__connector)
 
+    def __onDeleteNode(self, strid):
+        itm = self.__nodes.pop(int(strid))
+        self.__graphic_scene.removeItem(itm)
+
     def __onOpCreateRequested(self, name):
-        n = self.__scene.createNode(name)
-        if n is not None:
-            item = OFnUINodeItem(n)
-            self.__nodes[n.id()] = item
+        self.__scene.createNode(name)
+
+    def __onNodeCreated(self, node):
+        if node.id() in self.__nodes:
+            return
+
+        if node is not None:
+            item = OFnUINodeItem(node)
+            self.__nodes[node.id()] = item
             self.__graphic_scene.addItem(item)
-            pos = self.mapToScene(self.mapFromGlobal(QtGui.QCursor.pos()))
-            item.setPos(
-                pos.x() - item.boundingRect().width() * 0.5,
-                pos.y() - item.boundingRect().height() * 0.5,
-            )
+            px, py = node.getUserData("ui:pos", (None, None))
+            if px is None or py is None:
+                pos = self.mapToScene(self.mapFromGlobal(QtGui.QCursor.pos()))
+                px = pos.x() - item.boundingRect().width() * 0.5
+                py = pos.y() - item.boundingRect().height() * 0.5
+
+            item.setPos(px, py)
 
             item.portClicked.connect(self.__showConnector)
 
@@ -382,9 +397,7 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
 
         for rn in rmv_nodes:
             rnh = rn.node().id()
-            if self.__scene.deleteNode(rn.node()):
-                self.__graphic_scene.removeItem(rn)
-                self.__nodes.pop(rnh)
+            self.__scene.deleteNode(rn.node())
 
     def fit(self):
         rect = QtCore.QRect()
