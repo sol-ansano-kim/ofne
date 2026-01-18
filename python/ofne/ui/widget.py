@@ -281,47 +281,60 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         self.__connector = None
         self.__move_scene = False
         self.__old_scene_pos = None
-
-        self.__scene = model.OFnUIScene(scene if isinstance(scene, OFnScene) else OFnScene())
-
-        self.__graphic_scene = QtWidgets.QGraphicsScene()
-        self.setScene(self.__graphic_scene)
+        self.__scene = None
+        self.__graphic_scene = None
 
         self.__op_selector = OFnUIOpSelector(parent=self)
-
         self.__op_selector.OpSelected.connect(self.__onOpCreateRequested)
-        self.__scene.nodeCreated.connect(self.__onNodeCreated)
-        self.__scene.nodeDeleted.connect(self.__onDeleteNode)
-        self.__scene.nodeConnected.connect(self.__onConnected)
-        self.__scene.nodeDisconnected.connect(self.__onDisconnected)
 
         pal = self.palette()
         pal.setColor(QtGui.QPalette.Window, QtGui.QColor(25, 25, 25))
         pal.setColor(QtGui.QPalette.Text, QtGui.QColor(220, 220, 220))
         self.setPalette(pal)
-
         self.setTransformationAnchor(QtWidgets.QGraphicsView.AnchorUnderMouse)
         self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-        self.__graphic_scene.setSceneRect(0, 0, 10000, 10000)
-        self.verticalScrollBar().setValue(5000)
-        self.horizontalScrollBar().setValue(5000)
-
         self.setMouseTracking(True)
         self.setDragMode(QtWidgets.QGraphicsView.RubberBandDrag)
 
+        self.newScene()
+
     def newScene(self):
+        self.__acceptScene(model.OFnUIScene(OFnScene()))
+
+    def open(self, filepath):
+        self.newScene()
+        self.__scene.read(filepath)
+        self.fit()
+
+    def __acceptScene(self, scene):
+        self.__nodes = {}
+        self.__connections = {}
+
         old_scene = self.__scene
-        old_gscene = self.__graphic_scene
-        self.__scene = model.OFnUIScene(OFnScene())
-        self.__graphic_scene = QtWidgets.QGraphicsScene()
-        self.setScene(self.__graphic_scene)
+        self.__scene = scene
         self.__scene.nodeCreated.connect(self.__onNodeCreated)
         self.__scene.nodeDeleted.connect(self.__onDeleteNode)
         self.__scene.nodeConnected.connect(self.__onConnected)
         self.__scene.nodeDisconnected.connect(self.__onDisconnected)
-        del old_scene
-        del old_gscene
+
+        old_gscene = self.__graphic_scene
+        self.__graphic_scene = QtWidgets.QGraphicsScene()
+        self.setScene(self.__graphic_scene)
+        self.__graphic_scene.setSceneRect(0, 0, 10000, 10000)
+        self.verticalScrollBar().setValue(5000)
+        self.horizontalScrollBar().setValue(5000)
+
+        if old_scene is not None:
+            old_scene.nodeCreated.disconnect(self.__onNodeCreated)
+            old_scene.nodeDeleted.disconnect(self.__onDeleteNode)
+            old_scene.nodeConnected.disconnect(self.__onConnected)
+            old_scene.nodeDisconnected.disconnect(self.__onDisconnected)
+
+            del old_scene
+
+        if old_gscene is not None:
+            del old_gscene
 
     def saveSceneAs(self, file_path):
         for node in self.__nodes.values():
@@ -331,6 +344,9 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         d = self.__scene.saveTo(file_path)
 
     def __onConnected(self, hash):
+        if hash in self.__connections:
+            return
+
         srch, dsth, index = hash
         src = self.__nodes[srch].output()
         dst = self.__nodes[dsth].input(index)
@@ -351,6 +367,9 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
 
     def __onDeleteNode(self, strid):
         itm = self.__nodes.pop(int(strid))
+        if itm is None:
+            return
+
         self.__graphic_scene.removeItem(itm)
 
     def __onOpCreateRequested(self, name):
