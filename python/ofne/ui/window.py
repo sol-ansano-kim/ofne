@@ -32,5 +32,6 @@ class OFnUIMain(QtWidgets.QMainWindow):
             self.__graph.saveSceneAs(res)
 
     def __open(self):
-        res = QtWidgets.QFileDialog.getOpenFileName(self, "Open", "", "Ofne Scene (*.ofsn)")
-        print(res)
+        res = QtWidgets.QFileDialog.getOpenFileName(self, "Open", "", "Ofne Scene (*.ofsn)")[0]
+        if res:
+            self.__graph.open(res)

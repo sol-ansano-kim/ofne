@@ -1,5 +1,6 @@
 import os
 from ..core import node
+from ..core import scene
 from PySide6 import QtCore
 
 
@@ -13,6 +14,19 @@ class OFnUIScene(QtCore.QObject):
         super(OFnUIScene, self).__init__()
         self.__scene = scene
         self.__connections = set()
+
+    def read(self, filepath):
+        self.__scene.read(filepath)
+
+        for n in self.__scene.nodes():
+            self.nodeCreated.emit(n)
+
+        for n in self.__scene.nodes():
+            for index, inp in enumerate(n.inputs()):
+                if inp is None:
+                    continue
+
+                self.nodeConnected.emit((inp.id(), n.id(), index))
 
     def saveTo(self, filepath):
         self.__scene.write(filepath)
