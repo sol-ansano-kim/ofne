@@ -1,4 +1,5 @@
 import sys
+import traceback
 from pprint import pprint
 
 
@@ -63,35 +64,48 @@ class _OFnSceneImpl(object):
             index += 1
 
     def read(self, filepath):
-        with open(filepath, "r") as f:
-            d = eval(f.read().encode(sys.getfilesystemencoding()))
+        try:
+            d = None
+            with open(filepath, "r") as f:
+                d = eval(f.read().encode(sys.getfilesystemencoding()))
 
-        id_map = {}
-        for node_desc in d.get("nodes", []):
-            new_node = self.createNode(node_desc["type"], name=node_desc["name"])
-            for pk, pv in node_desc["params"].items():
-                p = new_node.getParam(pk)
-                if p is None:
-                    print(f"WARNING : no such param '{pk}'")
-                    continue
+            id_map = {}
+            for node_desc in d.get("nodes", []):
+                new_node = self.createNode(node_desc["type"], name=node_desc["name"])
+                for pk, pv in node_desc["params"].items():
+                    p = new_node.getParam(pk)
+                    if p is None:
+                        print(f"WARNING : no such param '{pk}'")
+                        continue
 
-                if not p.isValid(pv):
-                    print(f"WARNING : invalid value '{pv}' for '{pk}'")
-                    continue
+                    if not p.isValid(pv):
+                        print(f"WARNING : invalid value '{pv}' for '{pk}'")
+                        continue
 
-                new_node.setParamValue(pk, pv)
+                    new_node.setParamValue(pk, pv)
 
-            for uk, uv in node_desc["userData"].items():
-                new_node.setUserData(uk, uv)
+                for uk, uv in node_desc["userData"].items():
+                    new_node.setUserData(uk, uv)
 
-            id_map[node_desc["id"]] = new_node
+                id_map[node_desc["id"]] = new_node
 
-        for con in d.get("connections", []):
-            id_map[con["dst"]].connect(id_map[con["src"]], index=con["index"])
+            for con in d.get("connections", []):
+                id_map[con["dst"]].connect(id_map[con["src"]], index=con["index"])
+
+            return True
+        except:
+            print(f"Error : Failed to read the scene -\n{traceback.format_exc()}")
+            return False
 
     def write(self, filepath):
-        with open(filepath, "w", encoding=sys.getfilesystemencoding()) as f:
-            pprint(self.toDict(), f)
+        try:
+            with open(filepath, "w", encoding=sys.getfilesystemencoding()) as f:
+                pprint(self.toDict(), f)
+
+            return True
+        except:
+            print(f"Error : Failed to write the scene -\n{traceback.format_exc()}")
+            return False
 
     def clear(self):
         keys = list(self.__nodes.keys())

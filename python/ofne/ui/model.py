@@ -10,26 +10,42 @@ class OFnUIScene(QtCore.QObject):
     nodeConnected = QtCore.Signal(tuple)
     nodeDisconnected = QtCore.Signal(tuple)
 
-    def __init__(self, scene):
+    def __init__(self):
         super(OFnUIScene, self).__init__()
-        self.__scene = scene
+        self.__filepath = None
+        self.__scene = scene.OFnScene()
         self.__connections = set()
 
     def read(self, filepath):
-        self.__scene.read(filepath)
+        res = self.__scene.read(filepath)
 
-        for n in self.__scene.nodes():
-            self.nodeCreated.emit(n)
+        if res:
+            for n in self.__scene.nodes():
+                self.nodeCreated.emit(n)
 
-        for n in self.__scene.nodes():
-            for index, inp in enumerate(n.inputs()):
-                if inp is None:
-                    continue
+            for n in self.__scene.nodes():
+                for index, inp in enumerate(n.inputs()):
+                    if inp is None:
+                        continue
 
-                self.nodeConnected.emit((inp.id(), n.id(), index))
+                    self.nodeConnected.emit((inp.id(), n.id(), index))
+
+            self.__filepath = os.path.normpath(filepath)
+
+        return res
+
+    def filepath(self):
+        return self.__filepath
+
+    def save(self):
+        return self.__scene.write(self.__filepath)
 
     def saveTo(self, filepath):
-        self.__scene.write(filepath)
+        if self.__scene.write(filepath):
+            self.__filepath = os.path.normpath(filepath)
+            return True
+
+        return False
 
     def createNode(self, op_type):
         nn = self.__scene.createNode(op_type)
