@@ -28,7 +28,9 @@ class OFnUIScene(QtCore.QObject):
                     if inp is None:
                         continue
 
-                    self.nodeConnected.emit((inp.id(), n.id(), index))
+                    h = (inp.id(), n.id(), index)
+                    self.__connections.add(h)
+                    self.nodeConnected.emit(h)
 
             self.__filepath = os.path.normpath(filepath)
 
