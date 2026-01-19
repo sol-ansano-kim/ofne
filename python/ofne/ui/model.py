@@ -49,8 +49,8 @@ class OFnUIScene(QtCore.QObject):
 
         return False
 
-    def createNode(self, op_type):
-        nn = self.__scene.createNode(op_type)
+    def createNode(self, opType):
+        nn = self.__scene.createNode(opType)
         if nn:
             self.nodeCreated.emit(nn)
 
