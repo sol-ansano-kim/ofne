@@ -44,7 +44,7 @@ class OFnUIScene(QtCore.QObject):
             d = self.__scene.toDict(nodeBounding=nodeBounding)
             QtGui.QGuiApplication.clipboard().setText(d.__repr__())
 
-    def loadFromClipboard(self):
+    def loadFromClipboard(self, center=None):
         txt = QtGui.QGuiApplication.clipboard().text()
         d = {}
         try:
@@ -54,6 +54,44 @@ class OFnUIScene(QtCore.QObject):
 
         if not isinstance(d, dict) or "nodes" not in d or "connections" not in d:
             return
+
+        if center:
+            l = None
+            r = None
+            t = None
+            b = None
+
+            for n in d["nodes"]:
+                ud = n.get("userData")
+                if "ui:pos" in ud:
+                    x, y = ud["ui:pos"]
+                    if l is None:
+                        l = x
+                    else:
+                        l = min(l, x)
+                    if r is None:
+                        r = x
+                    else:
+                        r = max(r, x)
+                    if t is None:
+                        t = y
+                    else:
+                        t = min(t, y)
+                    if b is None:
+                        b = y
+                    else:
+                        b = max(b, y)
+
+            print(l, r, t, b)
+            if l is not None and r is not None and t is not None and b is not None:
+                cx = (l + r) * 0.5
+                cy = (t + b) * 0.5
+
+                for n in d["nodes"]:
+                    ud = n.get("userData")
+                    if "ui:pos" in ud:
+                        x, y = ud["ui:pos"]
+                        ud["ui:pos"] = (x - cx + center.x(), y - cy + center.y())
 
         if self.__scene.load(d):
             self.__emitAllContents()

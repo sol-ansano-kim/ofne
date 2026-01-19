@@ -417,13 +417,17 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         selected_nodes = []
         for node_item in self.__nodes.values():
             if node_item.isSelected():
-                selected_nodes.append(node_item.node())
+                node = node_item.node()
+                pos = node_item.pos()
+                node.setUserData("ui:pos", (pos.x(), pos.y()))
+                selected_nodes.append(node)
 
         if selected_nodes:
             self.__scene.copyToClipboard(selected_nodes)
 
     def __loadFromClipboard(self):
-        self.__scene.loadFromClipboard()
+        pos = self.mapToScene(self.mapFromGlobal(QtGui.QCursor.pos()))
+        self.__scene.loadFromClipboard(center=pos)
 
     def __deleteSelectedItems(self):
         rmv_cons = []
