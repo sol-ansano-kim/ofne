@@ -4,8 +4,6 @@ from PySide6 import QtCore
 from PySide6 import QtGui
 
 from ..core.opManager import manager as op_manager
-from ..core.scene import OFnScene
-from ..core.node import OFnNode
 from . import model
 
 
