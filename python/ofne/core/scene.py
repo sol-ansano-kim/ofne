@@ -22,10 +22,10 @@ class OFnScene(abst._SceneBase):
         return self.__impl.getUniqueName()
 
     def read(self, filepath):
-        self.__impl.read(filepath)
+        return self.__impl.read(filepath)
 
     def write(self, filepath):
-        self.__impl.write(filepath)
+        return self.__impl.write(filepath)
 
     def clear(self):
         return self.__impl.clear()

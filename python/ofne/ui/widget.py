@@ -274,6 +274,8 @@ class OFnUIConnector(QtWidgets.QGraphicsPathItem):
 
 
 class OFnUINodeGraph(QtWidgets.QGraphicsView):
+    sceneFilepathChanged = QtCore.Signal(str)
+
     def __init__(self, scene=None, parent=None):
         super(OFnUINodeGraph, self).__init__(parent=parent)
         self.__nodes = {}
@@ -300,12 +302,14 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         self.newScene()
 
     def newScene(self):
-        self.__acceptScene(model.OFnUIScene(OFnScene()))
+        self.__acceptScene(model.OFnUIScene())
 
     def open(self, filepath):
         self.newScene()
-        self.__scene.read(filepath)
-        self.fit()
+
+        if self.__scene.read(filepath):
+            self.fit()
+            self.sceneFilepathChanged.emit(self.__scene.filepath())
 
     def __acceptScene(self, scene):
         self.__nodes = {}
@@ -336,12 +340,16 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         if old_gscene is not None:
             del old_gscene
 
-    def saveSceneAs(self, file_path):
+    def saveSceneAs(self, filepath):
         for node in self.__nodes.values():
             pos = node.pos()
             node.node().setUserData("ui:pos", (pos.x(), pos.y()))
 
-        d = self.__scene.saveTo(file_path)
+        if self.__scene.saveTo(filepath):
+            self.sceneFilepathChanged.emit(self.__scene.filepath())
+
+    def save(self):
+        return self.saveSceneAs(self.__scene.filepath())
 
     def __onConnected(self, hash):
         if hash in self.__connections:
