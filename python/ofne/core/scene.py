@@ -19,7 +19,7 @@ class OFnScene(abst._SceneBase):
         return self.__impl.nodes()
 
     def getUniqueName(self, name):
-        return self.__impl.getUniqueName()
+        return self.__impl.getUniqueName(name)
 
     def load(self, data):
         return self.__impl.load(data)
