@@ -2,6 +2,7 @@ import os
 from ..core import node
 from ..core import scene
 from PySide6 import QtCore
+from PySide6 import QtGui
 
 
 class OFnUIScene(QtCore.QObject):
@@ -20,18 +21,7 @@ class OFnUIScene(QtCore.QObject):
         res = self.__scene.read(filepath)
 
         if res:
-            for n in self.__scene.nodes():
-                self.nodeCreated.emit(n)
-
-            for n in self.__scene.nodes():
-                for index, inp in enumerate(n.inputs()):
-                    if inp is None:
-                        continue
-
-                    h = (inp.id(), n.id(), index)
-                    self.__connections.add(h)
-                    self.nodeConnected.emit(h)
-
+            self.__emitAllContents()
             self.__filepath = os.path.normpath(filepath)
 
         return res
@@ -48,6 +38,38 @@ class OFnUIScene(QtCore.QObject):
             return True
 
         return False
+
+    def copyToClipboard(self, nodeBounding):
+        if self.__scene:
+            d = self.__scene.toDict(nodeBounding=nodeBounding)
+            QtGui.QGuiApplication.clipboard().setText(d.__repr__())
+
+    def loadFromClipboard(self):
+        txt = QtGui.QGuiApplication.clipboard().text()
+        d = {}
+        try:
+            d = eval(txt)
+        except:
+            return
+
+        if not isinstance(d, dict) or "nodes" not in d or "connections" not in d:
+            return
+
+        if self.__scene.load(d):
+            self.__emitAllContents()
+
+    def __emitAllContents(self):
+        for n in self.__scene.nodes():
+            self.nodeCreated.emit(n)
+
+        for n in self.__scene.nodes():
+            for index, inp in enumerate(n.inputs()):
+                if inp is None:
+                    continue
+
+                h = (inp.id(), n.id(), index)
+                self.__connections.add(h)
+                self.nodeConnected.emit(h)
 
     def createNode(self, opType):
         nn = self.__scene.createNode(opType)

@@ -94,11 +94,17 @@ class _SceneBase(object):
     def getUniqueName(self, name):
         raise OFnNotImplementedError(self, "getUniqueName")
 
+    def load(self, data):
+        raise OFnNotImplementedError(self, "load")
+
     def read(self, filepath):
         raise OFnNotImplementedError(self, "read")
 
     def write(self, filepath):
         raise OFnNotImplementedError(self, "write")
+
+    def toDict(self, nodeBounding=None):
+        raise OFnNotImplementedError(self, "toDict")
 
     def clear(self):
         raise OFnNotImplementedError(self, "clear")

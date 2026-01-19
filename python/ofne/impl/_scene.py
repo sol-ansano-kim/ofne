@@ -67,10 +67,15 @@ class _OFnSceneImpl(object):
         try:
             d = None
             with open(filepath, "r") as f:
-                d = eval(f.read().encode(sys.getfilesystemencoding()))
+                return self.load(eval(f.read().encode(sys.getfilesystemencoding())))
+        except:
+            print(f"Error : Failed to read the scene -\n{traceback.format_exc()}")
+            return False
 
+    def load(self, data):
+        try:
             id_map = {}
-            for node_desc in d.get("nodes", []):
+            for node_desc in data.get("nodes", []):
                 new_node = self.createNode(node_desc["type"], name=node_desc["name"])
                 for pk, pv in node_desc["params"].items():
                     p = new_node.getParam(pk)
@@ -89,12 +94,12 @@ class _OFnSceneImpl(object):
 
                 id_map[node_desc["id"]] = new_node
 
-            for con in d.get("connections", []):
+            for con in data.get("connections", []):
                 id_map[con["dst"]].connect(id_map[con["src"]], index=con["index"])
 
             return True
         except:
-            print(f"Error : Failed to read the scene -\n{traceback.format_exc()}")
+            print(f"Error : Failed to load the scene -\n{traceback.format_exc()}")
             return False
 
     def write(self, filepath):
@@ -116,13 +121,18 @@ class _OFnSceneImpl(object):
 
         return True
 
-    def toDict(self):
+    def toDict(self, nodeBounding=None):
+        node_ids = set([x.id() for x in nodeBounding]) if nodeBounding is not None else None
+
         d = {
             "nodes": [],
             "connections": []
         }
 
         for n in self.__nodes.values():
+            if node_ids and n.id() not in node_ids:
+                continue
+
             params = {}
             for pn in n.paramNames():
                 params[pn] = n.getParamValue(pn)
@@ -143,6 +153,9 @@ class _OFnSceneImpl(object):
 
             for i, inp in enumerate(n.inputs()):
                 if inp is None:
+                    continue
+
+                if node_ids and inp.id() not in node_ids:
                     continue
 
                 d["connections"].append(

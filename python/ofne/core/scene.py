@@ -21,11 +21,17 @@ class OFnScene(abst._SceneBase):
     def getUniqueName(self, name):
         return self.__impl.getUniqueName()
 
+    def load(self, data):
+        return self.__impl.load(data)
+
     def read(self, filepath):
         return self.__impl.read(filepath)
 
     def write(self, filepath):
         return self.__impl.write(filepath)
+
+    def toDict(self, nodeBounding=None):
+        return self.__impl.toDict(nodeBounding=nodeBounding)
 
     def clear(self):
         return self.__impl.clear()
