@@ -1,9 +1,8 @@
-from ofne.core import op
-from ofne.core import param
+from ofne import plugin
 from ofne.core import view
 
 
-class Viewer(op.OFnOp):
+class Viewer(plugin.OFnOp):
     def __init__(self):
         super(Viewer, self).__init__()
 
