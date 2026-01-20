@@ -1,5 +1,5 @@
 from PySide6 import QtWidgets
-from . import widget
+from . import graph
 
 
 class OFnUIMain(QtWidgets.QMainWindow):
@@ -9,7 +9,7 @@ class OFnUIMain(QtWidgets.QMainWindow):
         central_layout = QtWidgets.QVBoxLayout(central)
         self.setCentralWidget(central)
         # splitter = QtWidgets.QSplitter()
-        self.__graph = widget.OFnUINodeGraph(parent=self)
+        self.__graph = graph.OFnUINodeGraph(parent=self)
         central_layout.addWidget(self.__graph)
 
         file_menu = self.menuBar().addMenu("File")
