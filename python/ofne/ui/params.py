@@ -106,8 +106,9 @@ class OFnUIBoolParam(QtWidgets.QCheckBox):
 class OFnUIParams(QtWidgets.QFrame):
     def __init__(self, parent=None):
         super(OFnUIParams, self).__init__(parent=parent)
+        self.setFrameStyle(QtWidgets.QFrame.Raised | QtWidgets.QFrame.StyledPanel)
         self.__node = None
-        self.__layout = QtWidgets.QVBoxLayout(self)
+        self.__param_layout = QtWidgets.QVBoxLayout(self)
 
     def setNode(self, node):
         self.__node = node
@@ -138,10 +139,12 @@ class OFnUIParams(QtWidgets.QFrame):
                 if pw:
                     layout.addWidget(pw)
 
-                self.__layout.addLayout(layout)
+                self.__param_layout.addLayout(layout)
+
+            self.__param_layout.addStretch(1)
 
     def clearLayout(self):
-        curs = [self.__layout]
+        curs = [self.__param_layout]
 
         while (curs):
             cur = curs.pop(0)

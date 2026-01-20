@@ -4,6 +4,7 @@ from PySide6 import QtCore
 from PySide6 import QtGui
 
 from ..core.opManager import manager as op_manager
+from ..core.node import OFnNode
 from . import model
 
 
@@ -278,6 +279,7 @@ class OFnUIConnector(QtWidgets.QGraphicsPathItem):
 
 class OFnUINodeGraph(QtWidgets.QGraphicsView):
     sceneFilepathChanged = QtCore.Signal(str)
+    nodeSelected = QtCore.Signal(OFnNode)
 
     def __init__(self, scene=None, parent=None):
         super(OFnUINodeGraph, self).__init__(parent=parent)
@@ -330,6 +332,7 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         self.__graphic_scene = QtWidgets.QGraphicsScene()
         self.setScene(self.__graphic_scene)
         self.__graphic_scene.setSceneRect(0, 0, 10000, 10000)
+        self.__graphic_scene.selectionChanged.connect(self.__onSelectionChanged)
         self.verticalScrollBar().setValue(5000)
         self.horizontalScrollBar().setValue(5000)
 
@@ -338,6 +341,7 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
             old_scene.nodeDeleted.disconnect(self.__onDeleteNode)
             old_scene.nodeConnected.disconnect(self.__onConnected)
             old_scene.nodeDisconnected.disconnect(self.__onDisconnected)
+            old_scene.selectionChanged.disconnect(self.__onSelectionChanged)
 
             del old_scene
 
@@ -380,6 +384,13 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         if self.__connector is None:
             self.__connector = OFnUIConnector(item, item.direction())
             self.__graphic_scene.addItem(self.__connector)
+
+    def __onSelectionChanged(self):
+        nds = [x for x in self.__graphic_scene.selectedItems() if isinstance(x, OFnUINodeItem)]
+        if nds:
+            self.nodeSelected.emit(nds[-1].node())
+        else:
+            self.nodeSelected.emit(None)
 
     def __onDeleteNode(self, strid):
         itm = self.__nodes.pop(int(strid))
