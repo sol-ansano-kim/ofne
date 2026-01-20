@@ -119,7 +119,8 @@ class OFnUIPort(QtCore.QObject, QtWidgets.QGraphicsEllipseItem):
         self.setTransformOriginPoint(self.boundingRect().center())
         self.setBrush(self.__normal_brush)
         self.setPen(QtCore.Qt.NoPen)
-        self.setAcceptHoverEvents(True)
+        # do not use hover event, QGraphicsView.mouseMoveEvent instead of this
+        # self.setAcceptHoverEvents(True)
 
     def centerPos(self):
         return self.__parent.mapToScene(self.pos() + self.boundingRect().center())
@@ -136,13 +137,13 @@ class OFnUIPort(QtCore.QObject, QtWidgets.QGraphicsEllipseItem):
 
         return None
 
-    def hoverEnterEvent(self, event):
-        self.__hover = True
-        self.setScale(1.2)
-
-    def hoverLeaveEvent(self, event):
-        self.__hover = False
-        self.setScale(1)
+    def setHighlight(self, v):
+        if self.__hover != v:
+            self.__hover = v
+            if v:
+                self.setScale(1.2)
+            else:
+                self.setScale(1)
 
     def paint(self, painter, option, widget):
         brush = self.__normal_brush
@@ -268,7 +269,10 @@ class OFnUIConnector(QtWidgets.QGraphicsPathItem):
         path.moveTo(st_pos)
         c1 = QtCore.QPoint(st_pos.x() + 50 * factor, st_pos.y())
         c2 = QtCore.QPoint(pos.x() + 50 * -factor, pos.y())
-        path.cubicTo(c1, c2, pos)
+        ed_pos = QtCore.QPoint()
+        ed_pos.setX(pos.x() + (-2 if st_pos.x() < pos.x() else 2))
+        ed_pos.setY(pos.y() + (-2 if st_pos.y() < pos.y() else 2))
+        path.cubicTo(c1, c2, ed_pos)
 
         self.setPath(path)
 
@@ -280,6 +284,7 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         super(OFnUINodeGraph, self).__init__(parent=parent)
         self.__nodes = {}
         self.__connections = {}
+        self.__highlighted_port = None
         self.__connector = None
         self.__move_scene = False
         self.__old_scene_pos = None
@@ -519,6 +524,16 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
 
             self.__old_scene_pos = cur_pos
             return
+
+        item_at = self.itemAt(cur_pos)
+        if self.__highlighted_port:
+            if item_at != self.__highlighted_port:
+                self.__highlighted_port.setHighlight(False)
+                self.__highlighted_port = None
+
+        if isinstance(item_at, OFnUIPort):
+            self.__highlighted_port = item_at
+            self.__highlighted_port.setHighlight(True)
 
         if self.__connector:
             self.__connector.setEndPos(self.mapToScene(cur_pos))
