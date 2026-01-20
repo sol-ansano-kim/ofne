@@ -247,6 +247,7 @@ class OFnUIConnection(QtWidgets.QGraphicsPathItem):
         painter.drawPath(self.path())
         painter.restore()
 
+
 class OFnUIConnector(QtWidgets.QGraphicsPathItem):
     def __init__(self, item, direction, parent=None):
         super(OFnUIConnector, self).__init__(parent=parent)
@@ -489,7 +490,7 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         if self.__connector:
             self.__graphic_scene.removeItem(self.__connector)
 
-            item_at = self.itemAt(self.mapFromGlobal(QtGui.QCursor.pos()))
+            item_at = self.itemAt(event.pos())
             if isinstance(item_at, OFnUIPort):
                 start_item = self.__connector.item()
                 if start_item.node() != item_at.node() and start_item.direction() != item_at.direction():
@@ -508,9 +509,9 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         super(OFnUINodeGraph, self).mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
-        if self.__move_scene:
-            cur_pos = event.pos()
+        cur_pos = event.pos()
 
+        if self.__move_scene:
             if self.__old_scene_pos:
                 d = self.__old_scene_pos - cur_pos
                 self.verticalScrollBar().setValue(self.verticalScrollBar().value() + d.y())
@@ -520,7 +521,7 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
             return
 
         if self.__connector:
-            self.__connector.setEndPos(self.mapToScene(self.mapFromGlobal(QtGui.QCursor.pos())))
+            self.__connector.setEndPos(self.mapToScene(cur_pos))
 
         super(OFnUINodeGraph, self).mouseMoveEvent(event)
 
