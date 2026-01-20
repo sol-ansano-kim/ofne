@@ -17,8 +17,8 @@ class _OFnOpManagerImpl(object):
 
     def reloadPlugins(self):
         self.__plugins = {}
-
-        for path in os.environ.get("OFNE_PLUGIN_PATH", "").split(os.pathsep):
+        builtins = os.path.abspath(os.path.join(__file__, "../../builtins"))
+        for path in [builtins] + os.environ.get("OFNE_PLUGIN_PATH", "").split(os.pathsep):
             if not path:
                 continue
 
