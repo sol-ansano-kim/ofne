@@ -43,6 +43,7 @@ class OFnUIMain(QtWidgets.QMainWindow):
         open_action.triggered.connect(self.__open)
         self.__graph.sceneFilepathChanged.connect(self.__setTitle)
         self.__graph.nodeSelected.connect(self.__onNodeSelected)
+        self.__params.nodeRenamed.connect(self.__onNodeRenamed)
 
         # setup
         self.resize(800, 600)
@@ -61,6 +62,9 @@ class OFnUIMain(QtWidgets.QMainWindow):
 
     def __onNodeSelected(self, node):
         self.__params.setNode(node)
+
+    def __onNodeRenamed(self, node):
+        self.__graph.updateNodeName(node)
 
     def __new(self):
         self.__graph.newScene()

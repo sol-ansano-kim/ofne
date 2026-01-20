@@ -3,6 +3,7 @@ from PySide6 import QtCore
 
 from .. import exceptions
 from ..core import param
+from ..core.node import OFnNode
 
 
 class _TypedLineEditor(QtWidgets.QLineEdit):
@@ -10,6 +11,7 @@ class _TypedLineEditor(QtWidgets.QLineEdit):
 
     def __init__(self, node, paramName, parent=None):
         super(_TypedLineEditor, self).__init__(parent=parent)
+        self.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.__node = node
         self.__param = node.getParam(paramName)
         self.__param_name = paramName
@@ -69,6 +71,7 @@ class OFnUIStrCombo(QtWidgets.QComboBox):
 
     def __init__(self, node, paramName, parent=None):
         super(OFnUIStrCombo, self).__init__(parent=parent)
+        self.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.__node = node
         self.__param = self.__node.getParam(paramName)
         self.__param_name = paramName
@@ -92,6 +95,7 @@ class OFnUIBoolParam(QtWidgets.QCheckBox):
 
     def __init__(self, node, paramName, parent=None):
         super(OFnUIBoolParam, self).__init__(parent=parent)
+        self.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.__node = node
         self.__param = self.__node.getParam(paramName)
         self.__param_name = paramName
@@ -104,11 +108,29 @@ class OFnUIBoolParam(QtWidgets.QCheckBox):
 
 
 class OFnUIParams(QtWidgets.QFrame):
+    nodeRenamed = QtCore.Signal(OFnNode)
+
     def __init__(self, parent=None):
         super(OFnUIParams, self).__init__(parent=parent)
         self.setFrameStyle(QtWidgets.QFrame.Raised | QtWidgets.QFrame.StyledPanel)
         self.__node = None
-        self.__param_layout = QtWidgets.QVBoxLayout(self)
+
+        main_layout = QtWidgets.QVBoxLayout(self)
+        name_layout = QtWidgets.QHBoxLayout()
+        name_label = QtWidgets.QLabel("name", parent=self)
+        self.__name_line = QtWidgets.QLineEdit("", parent=self)
+        self.__name_line.setFocusPolicy(QtCore.Qt.ClickFocus)
+        self.__name_line.editingFinished.connect(self.__onNameChanged)
+        self.__name_line.setEnabled(False)
+        self.__name_line.setText("")
+        name_layout.addWidget(name_label)
+        name_layout.addStretch(1)
+        name_layout.addWidget(self.__name_line)
+
+        self.__param_layout = QtWidgets.QVBoxLayout()
+        main_layout.addLayout(name_layout)
+        main_layout.addLayout(self.__param_layout)
+        main_layout.addStretch(1)
 
     def setNode(self, node):
         self.__node = node
@@ -117,6 +139,9 @@ class OFnUIParams(QtWidgets.QFrame):
 
     def __buildParams(self):
         if self.__node:
+            self.__name_line.setEnabled(True)
+            self.__name_line.setText(self.__node.name())
+
             for pn in self.__node.paramNames():
                 p = self.__node.getParam(pn)
                 pw = None
@@ -142,6 +167,9 @@ class OFnUIParams(QtWidgets.QFrame):
                 self.__param_layout.addLayout(layout)
 
             self.__param_layout.addStretch(1)
+        else:
+            self.__name_line.setEnabled(False)
+            self.__name_line.setText("")
 
     def clearLayout(self):
         curs = [self.__param_layout]
@@ -161,3 +189,15 @@ class OFnUIParams(QtWidgets.QFrame):
                 if w:
                     cur.removeWidget(w)
                     w.setParent(None)
+
+    def __onNameChanged(self):
+        txt = self.__name_line.text()
+        if self.__node.name() == txt:
+            return
+
+        if not txt:
+            self.__name_line.setText(self.__node.name())
+        else:
+            new_name = self.__node.rename(txt)
+            self.__name_line.setText(new_name)
+            self.nodeRenamed.emit(self.__node)
