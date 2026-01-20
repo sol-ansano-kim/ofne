@@ -116,21 +116,28 @@ class OFnUIParams(QtWidgets.QFrame):
         self.__node = None
 
         main_layout = QtWidgets.QVBoxLayout(self)
+        type_layout = QtWidgets.QHBoxLayout()
         name_layout = QtWidgets.QHBoxLayout()
-        name_label = QtWidgets.QLabel("name", parent=self)
-        self.__name_line = QtWidgets.QLineEdit("", parent=self)
-        self.__name_line.setFocusPolicy(QtCore.Qt.ClickFocus)
-        self.__name_line.editingFinished.connect(self.__onNameChanged)
-        self.__name_line.setEnabled(False)
-        self.__name_line.setText("")
-        name_layout.addWidget(name_label)
-        name_layout.addStretch(1)
-        name_layout.addWidget(self.__name_line)
-
         self.__param_layout = QtWidgets.QVBoxLayout()
+        main_layout.addLayout(type_layout)
         main_layout.addLayout(name_layout)
         main_layout.addLayout(self.__param_layout)
         main_layout.addStretch(1)
+
+        self.__type_label = QtWidgets.QLabel(parent=self)
+        self.__type_label.setText("--------------------")
+        type_layout.addWidget(self.__type_label)
+
+        self.__name_label = QtWidgets.QLabel("name", parent=self)
+        self.__name_line = QtWidgets.QLineEdit("", parent=self)
+        self.__name_line.setFocusPolicy(QtCore.Qt.ClickFocus)
+        self.__name_line.editingFinished.connect(self.__onNameChanged)
+        self.__name_label.setVisible(False)
+        self.__name_line.setVisible(False)
+        self.__name_line.setText("")
+        name_layout.addWidget(self.__name_label)
+        name_layout.addStretch(1)
+        name_layout.addWidget(self.__name_line)
 
     def setNode(self, node):
         self.__node = node
@@ -139,7 +146,9 @@ class OFnUIParams(QtWidgets.QFrame):
 
     def __buildParams(self):
         if self.__node:
-            self.__name_line.setEnabled(True)
+            self.__type_label.setText(self.__node.type())
+            self.__name_label.setVisible(True)
+            self.__name_line.setVisible(True)
             self.__name_line.setText(self.__node.name())
 
             for pn in self.__node.paramNames():
@@ -168,7 +177,9 @@ class OFnUIParams(QtWidgets.QFrame):
 
             self.__param_layout.addStretch(1)
         else:
-            self.__name_line.setEnabled(False)
+            self.__type_label.setText("--------------------")
+            self.__name_label.setVisible(False)
+            self.__name_line.setVisible(False)
             self.__name_line.setText("")
 
     def clearLayout(self):
@@ -191,6 +202,9 @@ class OFnUIParams(QtWidgets.QFrame):
                     w.setParent(None)
 
     def __onNameChanged(self):
+        if not self.__node:
+            return
+
         txt = self.__name_line.text()
         if self.__node.name() == txt:
             return
