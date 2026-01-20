@@ -356,6 +356,10 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         return self.saveSceneAs(self.__scene.filepath())
 
     def __onConnected(self, hash):
+        if self.__connector:
+            self.__graphic_scene.removeItem(self.__connector)
+            self.__connector = None
+
         if hash in self.__connections:
             return
 
@@ -492,8 +496,6 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
             return
 
         if self.__connector:
-            self.__graphic_scene.removeItem(self.__connector)
-
             item_at = self.itemAt(event.pos())
             if isinstance(item_at, OFnUIPort):
                 start_item = self.__connector.item()
@@ -507,7 +509,9 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
 
                     self.__scene.connect(src.node(), dst.node(), dst.index())
 
-            self.__connector = None
+            if self.__connector:
+                self.__graphic_scene.removeItem(self.__connector)
+                self.__connector = None
             return
 
         super(OFnUINodeGraph, self).mousePressEvent(event)
@@ -543,5 +547,19 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         QtGui.QGuiApplication.restoreOverrideCursor()
         self.__move_scene = False
         self.__old_scene_pos = None
+
+        if self.__connector:
+            item_at = self.itemAt(event.pos())
+            if isinstance(item_at, OFnUIPort):
+                start_item = self.__connector.item()
+                if start_item.node() != item_at.node() and start_item.direction() != item_at.direction():
+                    if start_item.direction() == PortDirection.Input:
+                        src = item_at
+                        dst = start_item
+                    else:
+                        src = start_item
+                        dst = item_at
+
+                    self.__scene.connect(src.node(), dst.node(), dst.index())
 
         super(OFnUINodeGraph, self).mouseReleaseEvent(event)
