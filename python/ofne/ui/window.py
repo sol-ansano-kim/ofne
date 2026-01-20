@@ -1,5 +1,7 @@
 from PySide6 import QtWidgets
+from PySide6 import QtCore
 from . import graph
+from . import params
 
 
 class OFnUIMain(QtWidgets.QMainWindow):
@@ -8,10 +10,25 @@ class OFnUIMain(QtWidgets.QMainWindow):
         central = QtWidgets.QWidget(self)
         central_layout = QtWidgets.QVBoxLayout(central)
         self.setCentralWidget(central)
-        # splitter = QtWidgets.QSplitter()
-        self.__graph = graph.OFnUINodeGraph(parent=self)
-        central_layout.addWidget(self.__graph)
 
+        self.__vert_splitter = QtWidgets.QSplitter(QtCore.Qt.Vertical)
+        self.__bottom_splitter = QtWidgets.QSplitter(QtCore.Qt.Horizontal)
+        central_layout.addWidget(self.__vert_splitter)
+
+        viewer = QtWidgets.QFrame()
+        self.__vert_splitter.addWidget(viewer)
+        self.__vert_splitter.addWidget(self.__bottom_splitter)
+        self.__vert_splitter.setStretchFactor(0, 1)
+        self.__vert_splitter.setStretchFactor(1, 0)
+
+        self.__graph = graph.OFnUINodeGraph(parent=self)
+        self.__params = params.OFnUIParams(parent=self)
+        self.__bottom_splitter.addWidget(self.__graph)
+        self.__bottom_splitter.addWidget(self.__params)
+        self.__bottom_splitter.setStretchFactor(0, 1)
+        self.__bottom_splitter.setStretchFactor(1, 0)
+
+        # menu
         file_menu = self.menuBar().addMenu("File")
         new_action = file_menu.addAction("New")
         open_action = file_menu.addAction("Open")
@@ -19,12 +36,15 @@ class OFnUIMain(QtWidgets.QMainWindow):
         save_as_action = file_menu.addAction("SaveAs")
         self.__save_action.setEnabled(False)
 
+        # signal
         new_action.triggered.connect(self.__new)
         self.__save_action.triggered.connect(self.__save)
         save_as_action.triggered.connect(self.__saveAs)
         open_action.triggered.connect(self.__open)
         self.__graph.sceneFilepathChanged.connect(self.__setTitle)
+        self.__graph.nodeSelected.connect(self.__onNodeSelected)
 
+        # setup
         self.resize(800, 600)
         self.__setTitle(None)
 
@@ -38,6 +58,9 @@ class OFnUIMain(QtWidgets.QMainWindow):
             self.__save_action.setEnabled(False)
 
         self.setWindowTitle(title)
+
+    def __onNodeSelected(self, node):
+        self.__params.setNode(node)
 
     def __new(self):
         self.__graph.newScene()
