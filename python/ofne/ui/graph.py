@@ -204,6 +204,9 @@ class OFnUINodeItem(QtCore.QObject, QtWidgets.QGraphicsItemGroup):
             port.portClicked.connect(self.portClicked.emit)
             self.__output = port
 
+    def updateNodeName(self):
+        self.__label.setLabel(self.__node.name())
+
     def input(self, index):
         return self.__inputs[index]
 
@@ -306,6 +309,11 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         self.setDragMode(QtWidgets.QGraphicsView.RubberBandDrag)
 
         self.newScene()
+
+    def updateNodeName(self, node):
+        n = self.__nodes.get(node.id())
+        if n:
+            n.updateNodeName()
 
     def newScene(self):
         self.__acceptScene(model.OFnUIScene())
