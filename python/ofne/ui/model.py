@@ -82,7 +82,6 @@ class OFnUIScene(QtCore.QObject):
                     else:
                         b = max(b, y)
 
-            print(l, r, t, b)
             if l is not None and r is not None and t is not None and b is not None:
                 cx = (l + r) * 0.5
                 cy = (t + b) * 0.5
