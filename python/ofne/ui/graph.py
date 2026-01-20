@@ -281,6 +281,7 @@ class OFnUIConnector(QtWidgets.QGraphicsPathItem):
 
 
 class OFnUINodeGraph(QtWidgets.QGraphicsView):
+    graphChanged = QtCore.Signal()
     sceneFilepathChanged = QtCore.Signal(str)
     nodeSelected = QtCore.Signal(OFnNode)
 
@@ -414,19 +415,18 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         if node.id() in self.__nodes:
             return
 
-        if node is not None:
-            item = OFnUINodeItem(node)
-            self.__nodes[node.id()] = item
-            self.__graphic_scene.addItem(item)
-            px, py = node.getUserData("ui:pos", (None, None))
-            if px is None or py is None:
-                pos = self.mapToScene(self.mapFromGlobal(QtGui.QCursor.pos()))
-                px = pos.x() - item.boundingRect().width() * 0.5
-                py = pos.y() - item.boundingRect().height() * 0.5
+        item = OFnUINodeItem(node)
+        self.__nodes[node.id()] = item
+        self.__graphic_scene.addItem(item)
+        px, py = node.getUserData("ui:pos", (None, None))
+        if px is None or py is None:
+            pos = self.mapToScene(self.mapFromGlobal(QtGui.QCursor.pos()))
+            px = pos.x() - item.boundingRect().width() * 0.5
+            py = pos.y() - item.boundingRect().height() * 0.5
 
-            item.setPos(px, py)
+        item.setPos(px, py)
 
-            item.portClicked.connect(self.__showConnector)
+        item.portClicked.connect(self.__showConnector)
 
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_Tab:

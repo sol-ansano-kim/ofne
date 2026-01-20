@@ -108,6 +108,7 @@ class OFnUIBoolParam(QtWidgets.QCheckBox):
 
 
 class OFnUIParams(QtWidgets.QFrame):
+    paramChanged = QtCore.Signal()
     nodeRenamed = QtCore.Signal(OFnNode)
 
     def __init__(self, parent=None):
@@ -172,6 +173,7 @@ class OFnUIParams(QtWidgets.QFrame):
                 layout.addStretch(1)
                 if pw:
                     layout.addWidget(pw)
+                    pw.paramChanged.connect(self.paramChanged.emit)
 
                 self.__param_layout.addLayout(layout)
 
