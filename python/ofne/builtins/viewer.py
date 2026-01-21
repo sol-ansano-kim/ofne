@@ -1,5 +1,5 @@
 from ofne import plugin
-from ofne.core import view
+from ofne.core import resource
 
 
 class Viewer(plugin.OFnOp):
@@ -16,4 +16,4 @@ class Viewer(plugin.OFnOp):
         return False
 
     def operate(self, params, packetArray):
-        view.OFnView().dump(packetArray.packet(0))
+        resource.OFnViewResource().dump(packetArray.packet(0))
