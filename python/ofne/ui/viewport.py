@@ -258,9 +258,9 @@ class OFnUITextureShader(object):
         self.__batch.uploadTexture(self.__texture, self.__view.image())
 
 
-class OFnUIVertices(object):
+class OFnUIGeometry(object):
     def __init__(self, hr):
-        super(OFnUIVertices, self).__init__()
+        super(OFnUIGeometry, self).__init__()
         self.__hardware = hr
         self.__vbuffer = self.__hardware.rhi().newBuffer(
             QtGui.QRhiBuffer.Dynamic,
@@ -322,7 +322,7 @@ class OFnUIView(QtGui.QWindow):
         self.__test_switch = False
         self.__hardware = OFnUIHardwareResources(self, QtGui.QRhi.D3D11)
         self.__tex_shader = OFnUITextureShader(self.__hardware)
-        self.__vertices = OFnUIVertices(self.__hardware)
+        self.__vertices = OFnUIGeometry(self.__hardware)
         self.__scale = 1.0
         self.__move_anchor = None
         self.__img_pos = QtCore.QPointF(0, 0)
@@ -368,7 +368,7 @@ class OFnUIView(QtGui.QWindow):
             self.__move_anchor = event.position()
             self.__geom_dirty = True
 
-    def __updateOFnUIVertices(self):
+    def __updateGeometry(self):
         self.__vertices.updateGeometry(self.width(), self.height(), *(self.__tex_shader.imageSize()), self.__img_pos.x(), self.__img_pos.y(), self.__scale)
 
     def render(self):
@@ -389,7 +389,7 @@ class OFnUIView(QtGui.QWindow):
             return
 
         if self.__geom_dirty:
-            self.__updateOFnUIVertices()
+            self.__updateGeometry()
 
         cbuffer = self.__hardware.cbuffer()
         rtarget = self.__hardware.rtarget()
@@ -432,5 +432,7 @@ class OFnUIViewport(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super(OFnUIViewport, self).__init__(parent=parent)
         self.__viewer = OFnUIView()
+        self.setMinimumWidth(100)
+        self.setMinimumHeight(100)
         layout = QtWidgets.QVBoxLayout(self)
         layout.addWidget(QtWidgets.QWidget.createWindowContainer(self.__viewer))
