@@ -287,6 +287,7 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
 
     def __init__(self, scene=None, parent=None):
         super(OFnUINodeGraph, self).__init__(parent=parent)
+        self.__slient = False
         self.__nodes = {}
         self.__connections = {}
         self.__highlighted_port = None
@@ -297,7 +298,9 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         self.__graphic_scene = None
 
         self.__op_selector = OFnUIOpSelector(parent=self)
+
         self.__op_selector.OpSelected.connect(self.__onOpCreateRequested)
+        self.graphChanged.connect(self.evaluate)
 
         pal = self.palette()
         pal.setColor(QtGui.QPalette.Window, QtGui.QColor(25, 25, 25))
@@ -316,15 +319,27 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         if n:
             n.updateNodeName()
 
-    def newScene(self):
+    def newScene(self, slient=False):
+        if not slient:
+            self.__slient = True
+
         self.__acceptScene(model.OFnUIScene())
 
-    def open(self, filepath):
-        self.newScene()
+        if not slient:
+            self.graphChanged.emit()
+            self.__slient = False
 
+    def open(self, filepath):
+        self.__slient = True
+
+        self.newScene(slient=True)
         if self.__scene.read(filepath):
             self.fit()
             self.sceneFilepathChanged.emit(self.__scene.filepath())
+
+        self.graphChanged.emit()
+
+        self.__slient = False
 
     def __acceptScene(self, scene):
         self.__nodes = {}
@@ -384,10 +399,16 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         self.__graphic_scene.addItem(con)
         self.__connections[hash] = con
 
+        if not self.__slient:
+            self.graphChanged.emit()
+
     def __onDisconnected(self, hash):
         con = self.__connections.pop(hash, None)
         if con:
             self.__graphic_scene.removeItem(con)
+
+        if not self.__slient:
+            self.graphChanged.emit()
 
     def __showConnector(self, item):
         if self.__connector is None:
@@ -408,6 +429,9 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
 
         self.__graphic_scene.removeItem(itm)
 
+        if not self.__slient:
+            self.graphChanged.emit()
+
     def __onOpCreateRequested(self, name):
         self.__scene.createNode(name)
 
@@ -427,6 +451,9 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         item.setPos(px, py)
 
         item.portClicked.connect(self.__showConnector)
+
+        if not self.__slient:
+            self.graphChanged.emit()
 
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_Tab:
@@ -454,10 +481,17 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
             self.__scene.copyToClipboard(selected_nodes)
 
     def __loadFromClipboard(self):
+        self.__slient = True
+
         pos = self.mapToScene(self.mapFromGlobal(QtGui.QCursor.pos()))
         self.__scene.loadFromClipboard(center=pos)
+        self.graphChanged.emit()
+
+        self.__slient = False
 
     def __deleteSelectedItems(self):
+        self.__slient = True
+
         rmv_cons = []
         for h, con_item in self.__connections.items():
             if con_item.isSelected():
@@ -473,6 +507,10 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         for rn in rmv_nodes:
             rnh = rn.node().id()
             self.__scene.deleteNode(rn.node())
+
+        self.graphChanged.emit()
+
+        self.__slient = False
 
     def fit(self):
         rect = QtCore.QRect()
