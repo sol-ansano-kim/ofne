@@ -1,5 +1,7 @@
 import os
+import numpy as np
 from ..core import node
+from ..core import resource
 from ..core.scene import OFnScene
 from ..graph.scene import OFnGraphScene
 from PySide6 import QtCore
@@ -177,3 +179,56 @@ class OFnUIScene(QtCore.QObject):
         target_nodes = [x for x in self.__scene.nodes() if not x.packetable()]
         if target_nodes:
             self.__scene_graph.evaluate(target_nodes)
+
+
+class OFnUIViewResource(object):
+    def __init__(self):
+        super(OFnUIViewResource, self).__init__()
+        self.__empty_image = QtGui.QImage(640, 640, QtGui.QImage.Format_RGBA32FPx4)
+        self.__empty_image.fill(QtGui.QColor(0, 0, 0))
+        self.__latest_stamp = None
+        self.__image = self.__empty_image
+
+    def isDirty(self):
+        stamp = resource.OFnViewResource().stamp()
+        if stamp == self.__latest_stamp:
+            return False
+
+        self.__latest_stamp = stamp
+        self.__readResource()
+
+        return True
+
+    def image(self):
+        return self.__image
+
+    def __readResource(self):
+        packet = resource.OFnViewResource().packet()
+        arr = packet.data()
+
+        if len(arr.shape) == 3:
+            h, w, c = arr.shape
+
+            rgba = None
+            if c == 4:
+                rgba = arr
+
+            elif c == 3:
+                alpha = np.ones((h, w, 1), dtype=arr.dtype)
+                rgba = np.concatenate([arr, alpha], axis=-1)
+
+            elif c == 2:
+                rgba = np.concatenate([arr[..., 0:1], arr[..., 1:2], np.zeros((h, w, 1), dtype=arr.dtype), np.ones((h, w, 1), dtype=arr.dtype)], axis=-1)
+
+            elif c == 1:
+                rgba  = np.concatenate([np.repeat(arr, 3, axis=-1), np.ones((h, w, 1), dtype=arr.dtype)], axis=-1)
+
+            elif c > 4:
+                rgba = arr[..., :4]
+
+            if rgba is not None:
+                self.__image = QtGui.QImage(rgba.data, w, h, rgba.strides[0], QtGui.QImage.Format.Format_RGBA32FPx4)
+            else:
+                self.__image = self.__empty_image
+        else:
+            self.__image = self.__empty_image
