@@ -44,6 +44,7 @@ class OFnUIMain(QtWidgets.QMainWindow):
         self.__graph.sceneFilepathChanged.connect(self.__setTitle)
         self.__graph.nodeSelected.connect(self.__onNodeSelected)
         self.__params.nodeRenamed.connect(self.__onNodeRenamed)
+        self.__params.paramChanged.connect(self.__graph.evaluate)
 
         # setup
         self.resize(800, 600)
