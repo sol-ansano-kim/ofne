@@ -21,7 +21,7 @@ class ReadImage(plugin.OFnOp):
     def operate(self, params, packetArray):
         path = params.get("path")
 
-        if not path or os.path.isfile(path):
+        if not path or not os.path.isfile(path):
             return plugin.OFnPacket()
 
         try:
