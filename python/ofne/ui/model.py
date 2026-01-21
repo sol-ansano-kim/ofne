@@ -1,6 +1,7 @@
 import os
 from ..core import node
-from ..core import scene
+from ..core.scene import OFnScene
+from ..graph.scene import OFnGraphScene
 from PySide6 import QtCore
 from PySide6 import QtGui
 
@@ -14,7 +15,8 @@ class OFnUIScene(QtCore.QObject):
     def __init__(self):
         super(OFnUIScene, self).__init__()
         self.__filepath = None
-        self.__scene = scene.OFnScene()
+        self.__scene = OFnScene()
+        self.__scene_graph = OFnGraphScene(self.__scene)
         self.__connections = set()
 
     def read(self, filepath):
@@ -170,3 +172,8 @@ class OFnUIScene(QtCore.QObject):
         self.nodeDisconnected.emit(exh)
 
         return True
+
+    def evaluate(self):
+        target_nodes = [x for x in self.__scene.nodes() if not x.packetable()]
+        if target_nodes:
+            self.__scene_graph.evaluate(target_nodes)
