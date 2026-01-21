@@ -314,6 +314,10 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
 
         self.newScene()
 
+    def evaluate(self):
+        if self.__scene:
+            self.__scene.evaluate()
+
     def updateNodeName(self, node):
         n = self.__nodes.get(node.id())
         if n:
