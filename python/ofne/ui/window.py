@@ -2,6 +2,7 @@ from PySide6 import QtWidgets
 from PySide6 import QtCore
 from . import graph
 from . import params
+from . import viewport
 
 
 class OFnUIMain(QtWidgets.QMainWindow):
@@ -15,8 +16,8 @@ class OFnUIMain(QtWidgets.QMainWindow):
         self.__bottom_splitter = QtWidgets.QSplitter(QtCore.Qt.Horizontal)
         central_layout.addWidget(self.__vert_splitter)
 
-        viewer = QtWidgets.QFrame()
-        self.__vert_splitter.addWidget(viewer)
+        self.__viewport = viewport.OFnUIViewport(parent=self)
+        self.__vert_splitter.addWidget(self.__viewport)
         self.__vert_splitter.addWidget(self.__bottom_splitter)
         self.__vert_splitter.setStretchFactor(0, 1)
         self.__vert_splitter.setStretchFactor(1, 0)
