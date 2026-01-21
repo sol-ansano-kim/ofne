@@ -289,17 +289,20 @@ class OFnUIGeometry(object):
         return b
 
     def updateGeometry(self, wWidth, wHeight, iWidth, iHeight, planePosX, planePosY, scale):
-        w = max(1, wWidth)
-        h = max(1, wHeight)
-        def to_ndc(px, py):
-            return (px / w) * 2.0 - 1.0, 1.0 - (py / h) * 2.0
+        wf = 1 / max(1, wWidth)
+        hf = -1 / max(1, wHeight)
 
-        x1, y1 = planePosX + (iWidth * scale), planePosY + (iHeight * scale)
+        hw = iWidth * 0.5
+        hh = iHeight * 0.5
+        x0 = -hw * scale + planePosX
+        y0 = -hh * scale - planePosY
+        x1 = hw * scale + planePosX
+        y1 = hh * scale - planePosY
 
-        p00 = to_ndc(planePosX, planePosY)
-        p10 = to_ndc(x1, planePosY)
-        p11 = to_ndc(x1, y1)
-        p01 = to_ndc(planePosX, y1)
+        p00 = (x0 * wf, y0 * hf)
+        p10 = (x1 * wf, y0 * hf)
+        p11 = (x1 * wf, y1 * hf)
+        p01 = (x0 * wf, y1 * hf)
 
         uv00 = (0.0, 0.0)
         uv10 = (1.0, 0.0)
