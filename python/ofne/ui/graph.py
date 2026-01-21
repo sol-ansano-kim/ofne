@@ -350,11 +350,11 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
             old_scene.nodeDeleted.disconnect(self.__onDeleteNode)
             old_scene.nodeConnected.disconnect(self.__onConnected)
             old_scene.nodeDisconnected.disconnect(self.__onDisconnected)
-            old_scene.selectionChanged.disconnect(self.__onSelectionChanged)
 
             del old_scene
 
         if old_gscene is not None:
+            old_gscene.selectionChanged.disconnect(self.__onSelectionChanged)
             del old_gscene
 
     def saveSceneAs(self, filepath):
