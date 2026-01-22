@@ -328,7 +328,14 @@ class OFnUIView(QtGui.QWindow):
     def __init__(self):
         super(OFnUIView, self).__init__()
         self.__test_switch = False
-        self.__hardware = OFnUIHardwareResources(self, QtGui.QRhi.D3D11)
+
+        # TODO : other platform
+        rhi_impl = QtGui.QRhi.D3D11
+        if sys.platform == "darwin":
+            self.setSurfaceType(QtGui.QSurface.MetalSurface)
+            rhi_impl = QtGui.QRhi.Metal
+
+        self.__hardware = OFnUIHardwareResources(self, rhi_impl)
         self.__tex_shader = OFnUITextureShader(self.__hardware)
         self.__vertices = OFnUIGeometry(self.__hardware)
         self.__scale = 1.0
