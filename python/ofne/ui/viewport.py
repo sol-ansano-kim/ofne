@@ -65,6 +65,11 @@ class OFnUIHardwareResources(object):
     def swapchain(self):
         return self.__swapchain
 
+    def pixelSize(self):
+        s = self.__swapchain.currentPixelSize()
+
+        return (s.width(), s.height())
+
     def readyToRender(self):
         if self.__rendering:
             return False
@@ -288,9 +293,9 @@ class OFnUIGeometry(object):
 
         return b
 
-    def updateGeometry(self, wWidth, wHeight, iWidth, iHeight, planePosX, planePosY, scale):
-        wf = 1 / max(1, wWidth)
-        hf = -1 / max(1, wHeight)
+    def updateGeometry(self, pixelWidth, pixelHeight, iWidth, iHeight, planePosX, planePosY, scale):
+        wf = 2.0 / max(1, pixelWidth)
+        hf = -2.0 / max(1, pixelHeight)
 
         hw = iWidth * 0.5
         hh = iHeight * 0.5
@@ -372,7 +377,7 @@ class OFnUIView(QtGui.QWindow):
             self.__geom_dirty = True
 
     def __updateGeometry(self):
-        self.__vertices.updateGeometry(self.width(), self.height(), *(self.__tex_shader.imageSize()), self.__img_pos.x(), self.__img_pos.y(), self.__scale)
+        self.__vertices.updateGeometry(*(self.__hardware.pixelSize()), *(self.__tex_shader.imageSize()), self.__img_pos.x(), self.__img_pos.y(), self.__scale)
 
     def render(self):
         if not self.isExposed():
@@ -430,12 +435,33 @@ class OFnUIView(QtGui.QWindow):
         self.__hardware.endFrame()
         self.__geom_dirty = False
 
+    def fit(self):
+        ww, wh = self.__hardware.pixelSize()
+        iw, ih = self.__tex_shader.imageSize()
+
+        if ww > wh:
+            ih = max(2, ih - 2)
+            self.__scale = wh / ih
+        else:
+            iw = max(2, iw - 2)
+            self.__scale = ww / iw
+
+        self.__geom_dirty = True
+
+    def keyPressEvent(self, event):
+        if event.key() == QtCore.Qt.Key_F:
+            self.fit()
+
 
 class OFnUIViewport(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super(OFnUIViewport, self).__init__(parent=parent)
         self.__viewer = OFnUIView()
-        self.setMinimumWidth(100)
-        self.setMinimumHeight(100)
+        self.setMinimumWidth(200)
+        self.setMinimumHeight(200)
         layout = QtWidgets.QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(QtWidgets.QWidget.createWindowContainer(self.__viewer))
+
+    def fit(self):
+        self.__viewer.fit()
