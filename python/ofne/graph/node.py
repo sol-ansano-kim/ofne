@@ -61,4 +61,4 @@ class OFnGraphNode(abst._GraphNodeBase):
                 self.__packet = p
 
     def packet(self):
-        return self.__packet.copy()
+        return self.__packet
