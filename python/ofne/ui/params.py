@@ -75,7 +75,11 @@ class OFnUIStrCombo(QtWidgets.QComboBox):
         self.__node = node
         self.__param = self.__node.getParam(paramName)
         self.__param_name = paramName
-        self.addItems(self.__param.valueList())
+        vls = self.__param.valueList()
+        pv = self.__node.getParamValue(self.__param_name)
+        if not self.__param.enforceValueList() and pv not in vls:
+            vls.insert(0, pv)
+        self.addItems(vls)
 
         if self.__param.enforceValueList():
             self.setCurrentIndex(self.findText(self.__node.getParamValue(self.__param_name)))
@@ -86,8 +90,9 @@ class OFnUIStrCombo(QtWidgets.QComboBox):
         self.currentIndexChanged.connect(self.__changed)
 
     def __changed(self, *args):
-        self.__node.setParamValue(self.__param_name, self.currentText())
-        self.paramChanged.emit()
+        if self.__node.getParamValue(self.__param_name) != self.currentText():
+            self.__node.setParamValue(self.__param_name, self.currentText())
+            self.paramChanged.emit()
 
 
 class OFnUIBoolParam(QtWidgets.QCheckBox):
