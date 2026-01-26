@@ -144,9 +144,9 @@ class OFnUITextureShader(object):
             raise Exception("SHADER ERROR")
 
         self.__sampler = self.__hardware.rhi().newSampler(
-            QtGui.QRhiSampler.Linear,
-            QtGui.QRhiSampler.Linear,
-            QtGui.QRhiSampler.Linear,
+            QtGui.QRhiSampler.Nearest,
+            QtGui.QRhiSampler.Nearest,
+            QtGui.QRhiSampler.None_,
             QtGui.QRhiSampler.ClampToEdge,
             QtGui.QRhiSampler.ClampToEdge,
             QtGui.QRhiSampler.ClampToEdge
