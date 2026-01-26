@@ -37,9 +37,9 @@ class GraphNode(unittest.TestCase):
                 super(PlusOp, self).__init__()
 
             def params(self):
-                return {
-                    "num": cls.param.OFnParamFloat()
-                }
+                return [
+                    cls.param.OFnParamFloat("num")
+                ]
 
             def needs(self):
                 return 1
@@ -56,10 +56,10 @@ class GraphNode(unittest.TestCase):
                 super(MakeNums, self).__init__()
 
             def params(self):
-                return {
-                    "count": cls.param.OFnParamInt(min=0),
-                    "num": cls.param.OFnParamFloat()
-                }
+                return [
+                    cls.param.OFnParamInt("count", min=0),
+                    cls.param.OFnParamFloat("num")
+                ]
 
             def needs(self):
                 return 0

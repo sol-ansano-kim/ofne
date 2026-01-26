@@ -8,9 +8,9 @@ class ReadImage(plugin.OFnOp):
         super(ReadImage, self).__init__()
 
     def params(self):
-        return {
-            "path": plugin.OFnParamStr("")
-        }
+        return [
+            plugin.OFnParamStr("path", "")
+        ]
 
     def needs(self):
         return 0

@@ -177,8 +177,14 @@ class _PacketArrayBase(object):
 
 
 class _ParamBase(object):
-    def __init__(self):
+    def __init__(self, name, default, label=None):
         super(_ParamBase, self).__init__()
+
+    def name(self):
+        raise OFnNotImplementedError(self, "name")
+
+    def label(self):
+        raise OFnNotImplementedError(self, "label")
 
     def default(self):
         raise OFnNotImplementedError(self, "default")
@@ -197,3 +203,23 @@ class _ParamBase(object):
 
     def copy(self):
         raise OFnNotImplementedError(self, "copy")
+
+
+class _ParamsBase(object):
+    def __init__(self, paramList):
+        super(_ParamsBase).__init__()
+
+    def copy(self):
+        raise OFnNotImplementedError(self, "copy")
+
+    def getParam(self, key):
+        raise OFnNotImplementedError(self, "getParam")
+
+    def get(self, key, default=None):
+        raise OFnNotImplementedError(self, "get")
+
+    def set(self, key, value):
+        raise OFnNotImplementedError(self, "set")
+
+    def keys(self):
+        raise OFnNotImplementedError(self, "keys")

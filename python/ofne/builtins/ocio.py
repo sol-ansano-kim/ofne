@@ -69,11 +69,11 @@ class OCIOExponentTransform(plugin.OFnOp):
         super(OCIOExponentTransform, self).__init__()
 
     def params(self):
-        return {
-            "gamma": plugin.OFnParamFloat(1.0, min=0.0, max=4.0),
-            "offset": plugin.OFnParamFloat(0.0, min=0.0, max=0.9),
-            "inverse": plugin.OFnParamBool(False)
-        }
+        return [
+            plugin.OFnParamFloat("gamma", 1.0, min=0.0, max=4.0),
+            plugin.OFnParamFloat("offset", 0.0, min=0.0, max=0.9),
+            plugin.OFnParamBool("inverse", False)
+        ]
 
     def needs(self):
         return 1
@@ -104,15 +104,15 @@ class OCIOExposureContrastTransform(plugin.OFnOp):
         super(OCIOExposureContrastTransform, self).__init__()
 
     def params(self):
-        return {
-            "exposure": plugin.OFnParamFloat(0.0),
-            "contrast": plugin.OFnParamFloat(1.0),
-            "gamma": plugin.OFnParamFloat(1.0),
-            "pivot": plugin.OFnParamFloat(0.18),
-            "logExposureStep": plugin.OFnParamFloat(0.088),
-            "logMidGray": plugin.OFnParamFloat(0.435),
-            "inverse": plugin.OFnParamBool(False)
-        }
+        return [
+            plugin.OFnParamFloat("exposure", 0.0),
+            plugin.OFnParamFloat("contrast", 1.0),
+            plugin.OFnParamFloat("gamma", 1.0),
+            plugin.OFnParamFloat("pivot", 0.18),
+            plugin.OFnParamFloat("logExposureStep", 0.088),
+            plugin.OFnParamFloat("logMidGray", 0.435),
+            plugin.OFnParamBool("inverse", False)
+        ]
 
     def needs(self):
         return 1
@@ -149,11 +149,11 @@ class OCIOColorSpaceTransform(plugin.OFnOp):
         super(OCIOColorSpaceTransform, self).__init__()
 
     def params(self):
-        return {
-            "config": plugin.OFnParamStr("", valueList=BUILTIN_CONFIGS, enforceValueList=False),
-            "from": plugin.OFnParamStr("", valueList=list(ROLES.keys()), enforceValueList=False),
-            "to": plugin.OFnParamStr("", valueList=list(ROLES.keys()), enforceValueList=False)
-        }
+        return [
+            plugin.OFnParamStr("config", "", valueList=BUILTIN_CONFIGS, enforceValueList=False),
+            plugin.OFnParamStr("from", "", valueList=list(ROLES.keys()), enforceValueList=False),
+            plugin.OFnParamStr("to", "", valueList=list(ROLES.keys()), enforceValueList=False)
+        ]
 
     def needs(self):
         return 1
@@ -206,14 +206,13 @@ class OCIODisplayViewTransform(plugin.OFnOp):
         super(OCIODisplayViewTransform, self).__init__()
 
     def params(self):
-        return {
-            "config": plugin.OFnParamStr("", valueList=BUILTIN_CONFIGS, enforceValueList=False),
-            "from": plugin.OFnParamStr("", valueList=list(ROLES.keys()), enforceValueList=False),
-            "display": plugin.OFnParamStr(""),
-            "view": plugin.OFnParamStr(""),
-            "inverse": plugin.OFnParamBool(False)
-
-        }
+        return [
+            plugin.OFnParamStr("config", "", valueList=BUILTIN_CONFIGS, enforceValueList=False),
+            plugin.OFnParamStr("from", "", valueList=list(ROLES.keys()), enforceValueList=False),
+            plugin.OFnParamStr("display", ""),
+            plugin.OFnParamStr("view", ""),
+            plugin.OFnParamBool("inverse", False)
+        ]
 
     def needs(self):
         return 1
@@ -264,11 +263,11 @@ class OCIONamedTransform(plugin.OFnOp):
         super(OCIONamedTransform, self).__init__()
 
     def params(self):
-        return {
-            "config": plugin.OFnParamStr("", valueList=BUILTIN_CONFIGS, enforceValueList=False),
-            "name": plugin.OFnParamStr(""),
-            "inverse": plugin.OFnParamBool(False)
-        }
+        return [
+            plugin.OFnParamStr("config", "", valueList=BUILTIN_CONFIGS, enforceValueList=False),
+            plugin.OFnParamStr("name", ""),
+            plugin.OFnParamBool("inverse", False)
+        ]
 
     def needs(self):
         return 1
@@ -317,10 +316,10 @@ class OCIOBuiltinTransform(plugin.OFnOp):
         super(OCIOBuiltinTransform, self).__init__()
 
     def params(self):
-        return {
-            "name": plugin.OFnParamStr(BUILTIN_TRANSFORMS[0], valueList=BUILTIN_TRANSFORMS, enforceValueList=True),
-            "inverse": plugin.OFnParamBool(False)
-        }
+        return [
+            plugin.OFnParamStr("name", BUILTIN_TRANSFORMS[0], valueList=BUILTIN_TRANSFORMS, enforceValueList=True),
+            plugin.OFnParamBool("inverse", False)
+        ]
 
     def needs(self):
         return 1

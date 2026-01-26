@@ -35,7 +35,7 @@ class CoreNode(unittest.TestCase):
                 super(OneInputs, self).__init__()
 
             def params(self):
-                return {}
+                return []
 
             def needs(self):
                 return 1
@@ -48,7 +48,7 @@ class CoreNode(unittest.TestCase):
                 super(TwoInputs, self).__init__()
 
             def params(self):
-                return {}
+                return []
 
             def needs(self):
                 return 2
@@ -61,7 +61,7 @@ class CoreNode(unittest.TestCase):
                 super(ZeroInputs, self).__init__()
 
             def params(self):
-                return {}
+                return []
 
             def needs(self):
                 return 0
@@ -74,12 +74,12 @@ class CoreNode(unittest.TestCase):
                 super(ParamTester, self).__init__()
 
             def params(self):
-                return {
-                    "int": cls.param.OFnParamInt(),
-                    "bool": cls.param.OFnParamBool(),
-                    "float": cls.param.OFnParamFloat(),
-                    "str": cls.param.OFnParamStr(),
-                }
+                return [
+                    cls.param.OFnParamInt("int", 0),
+                    cls.param.OFnParamBool("bool", False),
+                    cls.param.OFnParamFloat("float", 0.0),
+                    cls.param.OFnParamStr("str", ""),
+                ]
 
             def needs(self):
                 return 0
@@ -92,9 +92,9 @@ class CoreNode(unittest.TestCase):
                 super(PlusOp, self).__init__()
 
             def params(self):
-                return {
-                    "num": cls.param.OFnParamFloat()
-                }
+                return [
+                    cls.param.OFnParamFloat("num", 0.0)
+                ]
 
             def needs(self):
                 return 1
@@ -110,10 +110,10 @@ class CoreNode(unittest.TestCase):
                 super(MakeNums, self).__init__()
 
             def params(self):
-                return {
-                    "count": cls.param.OFnParamInt(min=0),
-                    "num": cls.param.OFnParamFloat()
-                }
+                return [
+                    cls.param.OFnParamInt("count", min=0),
+                    cls.param.OFnParamFloat("num")
+                ]
 
             def needs(self):
                 return 0

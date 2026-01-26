@@ -17,7 +17,7 @@ class ParamTest(unittest.TestCase):
             cls.exceptions = exceptions
 
     def test_bool(self):
-        b1 = self.param.OFnParamBool()
+        b1 = self.param.OFnParamBool("b")
         self.assertIsNotNone(b1)
         self.assertEqual(b1.type(), self.param.ParamTypeBool)
         self.assertEqual(b1.default(), False)
@@ -44,7 +44,7 @@ class ParamTest(unittest.TestCase):
         self.assertTrue(b2.isValid(True))
         self.assertTrue(b2.isValid(False))
 
-        b3 = self.param.OFnParamBool(default=True)
+        b3 = self.param.OFnParamBool("b", default=True)
         self.assertEqual(b3.default(), True)
         self.assertEqual(b3.get(), True)
 
@@ -56,7 +56,7 @@ class ParamTest(unittest.TestCase):
             b1.set("on")
 
     def test_int(self):
-        i1 = self.param.OFnParamInt()
+        i1 = self.param.OFnParamInt("i")
         self.assertIsNotNone(i1)
         self.assertEqual(i1.type(), self.param.ParamTypeInt)
         self.assertEqual(i1.default(), 0)
@@ -82,7 +82,7 @@ class ParamTest(unittest.TestCase):
         self.assertTrue(i2.isValid(4))
         self.assertTrue(i2.isValid(-1))
 
-        i3 = self.param.OFnParamInt(default=789)
+        i3 = self.param.OFnParamInt("i", default=789)
         self.assertEqual(i3.default(), 789)
         self.assertEqual(i3.get(), 789)
 
@@ -93,7 +93,7 @@ class ParamTest(unittest.TestCase):
         with self.assertRaises(self.exceptions.OFnInvalidParamValueError):
             i1.set("on")
 
-        i4 = self.param.OFnParamInt(default=0, min=0, max=100)
+        i4 = self.param.OFnParamInt("i", default=0, min=0, max=100)
         self.assertFalse(i4.isValid(-1))
         self.assertFalse(i4.isValid(101))
         self.assertTrue(i4.isValid(1))
@@ -106,7 +106,7 @@ class ParamTest(unittest.TestCase):
         self.assertEqual(i4.get(), 5)
 
     def test_float(self):
-        f1 = self.param.OFnParamFloat()
+        f1 = self.param.OFnParamFloat("f")
         self.assertIsNotNone(f1)
         self.assertEqual(f1.type(), self.param.ParamTypeFloat)
         self.assertEqual(f1.default(), 0.0)
@@ -132,7 +132,7 @@ class ParamTest(unittest.TestCase):
         self.assertTrue(f2.isValid(4.0))
         self.assertTrue(f2.isValid(-1.234))
 
-        f3 = self.param.OFnParamFloat(default=789.0)
+        f3 = self.param.OFnParamFloat("f", default=789.0)
         self.assertEqual(f3.default(), 789.0)
         self.assertEqual(f3.get(), 789.0)
 
@@ -143,7 +143,7 @@ class ParamTest(unittest.TestCase):
         with self.assertRaises(self.exceptions.OFnInvalidParamValueError):
             f1.set("on")
 
-        f4 = self.param.OFnParamFloat(default=0.0, min=0.0, max=100.0)
+        f4 = self.param.OFnParamFloat("f", default=0.0, min=0.0, max=100.0)
         self.assertFalse(f4.isValid(-0.00001))
         self.assertFalse(f4.isValid(100.1))
         self.assertTrue(f4.isValid(1.0))
@@ -156,7 +156,7 @@ class ParamTest(unittest.TestCase):
         self.assertEqual(f4.get(), 5.0)
 
     def test_str(self):
-        s1 = self.param.OFnParamStr()
+        s1 = self.param.OFnParamStr("s")
         self.assertIsNotNone(s1)
         self.assertEqual(s1.type(), self.param.ParamTypeStr)
         self.assertEqual(s1.default(), "")
@@ -180,7 +180,7 @@ class ParamTest(unittest.TestCase):
         self.assertTrue(s1.isValid("123"))
         self.assertTrue(s1.isValid("abc"))
 
-        s3 = self.param.OFnParamStr(default="ghi")
+        s3 = self.param.OFnParamStr("s", default="ghi")
         self.assertEqual(s3.default(), "ghi")
         self.assertEqual(s3.get(), "ghi")
 
@@ -191,7 +191,7 @@ class ParamTest(unittest.TestCase):
         with self.assertRaises(self.exceptions.OFnInvalidParamValueError):
             s1.set(-0.123)
 
-        s4 = self.param.OFnParamStr(default="a", valueList=["a", "b", "c"], enforceValueList=True)
+        s4 = self.param.OFnParamStr("s", default="a", valueList=["a", "b", "c"], enforceValueList=True)
         self.assertEqual(s4.valueList(), ["a", "b", "c"])
         self.assertFalse(s4.isValid("d"))
         self.assertFalse(s4.isValid("A"))
@@ -204,9 +204,9 @@ class ParamTest(unittest.TestCase):
         s4.set("b")
         self.assertEqual(s4.get(), "b")
         with self.assertRaises(self.exceptions.OFnInvalidParamValueError):
-            self.param.OFnParamStr(default="A", valueList=["a", "b", "c"], enforceValueList=True)
+            self.param.OFnParamStr("s", default="A", valueList=["a", "b", "c"], enforceValueList=True)
 
-        s5 = self.param.OFnParamStr(default="a", valueList=["a", "b", "c"], enforceValueList=False)
+        s5 = self.param.OFnParamStr("s", default="a", valueList=["a", "b", "c"], enforceValueList=False)
         self.assertEqual(s5.valueList(), ["a", "b", "c"])
         self.assertTrue(s5.isValid("d"))
         self.assertTrue(s5.isValid("A"))
@@ -214,47 +214,74 @@ class ParamTest(unittest.TestCase):
         s5.set("any")
         self.assertEqual(s5.get(), "any")
 
+    def test_label(self):
+        p = self.param.OFnParamBool("b")
+        self.assertEqual(p.name(), "b")
+        self.assertEqual(p.label(), "b")
+        p = self.param.OFnParamFloat("f")
+        self.assertEqual(p.name(), "f")
+        self.assertEqual(p.label(), "f")
+        p = self.param.OFnParamInt("i")
+        self.assertEqual(p.name(), "i")
+        self.assertEqual(p.label(), "i")
+        p = self.param.OFnParamStr("s")
+        self.assertEqual(p.name(), "s")
+        self.assertEqual(p.label(), "s")
+
+        p = self.param.OFnParamBool("b", label="bool")
+        self.assertEqual(p.name(), "b")
+        self.assertEqual(p.label(), "bool")
+        p = self.param.OFnParamFloat("f", label="float")
+        self.assertEqual(p.name(), "f")
+        self.assertEqual(p.label(), "float")
+        p = self.param.OFnParamInt("i", label="int")
+        self.assertEqual(p.name(), "i")
+        self.assertEqual(p.label(), "int")
+        p = self.param.OFnParamStr("s", label="str")
+        self.assertEqual(p.name(), "s")
+        self.assertEqual(p.label(), "str")
+
     def test_params(self):
-        params = self.param.OFnParams({})
+        params = self.param.OFnParams([])
         self.assertIsNotNone(params)
         self.assertEqual(params.keys(), [])
-        test = {
-            "bool": self.param.OFnParamBool(),
-            "int": self.param.OFnParamInt(),
-            "float": self.param.OFnParamFloat(),
-            "str": self.param.OFnParamStr()
-        }
+        test = [
+            self.param.OFnParamBool("bool"),
+            self.param.OFnParamInt("int"),
+            self.param.OFnParamFloat("float"),
+            self.param.OFnParamStr("str")
+        ]
 
         params = self.param.OFnParams(test)
         self.assertEqual(len(params.keys()), 4)
-        test.pop("str")
-        self.assertEqual(len(test.keys()), 3)
+        test.pop(0)
+        self.assertEqual(len(test), 3)
         self.assertEqual(len(params.keys()), 4)
 
-        test = {
-            "bool": self.param.OFnParamBool(),
-            "int": self.param.OFnParamInt(),
-            "float": self.param.OFnParamFloat(),
-            "str": self.param.OFnParamStr()
-        }
+        test = [
+            self.param.OFnParamBool("bool"),
+            self.param.OFnParamInt("int"),
+            self.param.OFnParamFloat("float"),
+            self.param.OFnParamStr("str")
+        ]
 
         params = self.param.OFnParams(test)
-        self.assertEqual(test["bool"].get(), params.get("bool"))
-        self.assertEqual(test["int"].get(), params.get("int"))
-        self.assertEqual(test["float"].get(), params.get("float"))
-        self.assertEqual(test["str"].get(), params.get("str"))
+        self.assertEqual(test[0].get(), params.get("bool"))
+        self.assertEqual(test[1].get(), params.get("int"))
+        self.assertEqual(test[2].get(), params.get("float"))
+        self.assertEqual(test[3].get(), params.get("str"))
 
-        self.assertFalse(test["bool"].get())
-        test["bool"].set(True)
-        self.assertTrue(test["bool"].get())
+        self.assertFalse(test[0].get())
+        test[0].set(True)
+        self.assertTrue(test[0].get())
         self.assertFalse(params.get("bool"))
         self.assertTrue(params.set("bool", True))
-        self.assertEqual(test["bool"].get(), params.get("bool"))
+        self.assertEqual(test[0].get(), params.get("bool"))
 
         self.assertTrue(params.set("int", 2))
-        self.assertNotEqual(test["int"].get(), params.get("int"))
-        test["int"].set(2)
-        self.assertEqual(test["int"].get(), params.get("int"))
+        self.assertNotEqual(test[1].get(), params.get("int"))
+        test[1].set(2)
+        self.assertEqual(test[1].get(), params.get("int"))
 
         self.assertEqual(params.get("float"), 0)
         self.assertEqual(params.get("float", 1), 0)

@@ -7,7 +7,7 @@ class Viewer(plugin.OFnOp):
         super(Viewer, self).__init__()
 
     def params(self):
-        return {}
+        return []
 
     def needs(self):
         return 1

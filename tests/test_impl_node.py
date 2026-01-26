@@ -24,7 +24,7 @@ class ImplNode(unittest.TestCase):
                 super(OneInputs, self).__init__()
 
             def params(self):
-                return {}
+                return []
 
             def needs(self):
                 return 1
@@ -37,7 +37,7 @@ class ImplNode(unittest.TestCase):
                 super(ZeroInputs, self).__init__()
 
             def params(self):
-                return {}
+                return []
 
             def needs(self):
                 return 0
@@ -50,7 +50,7 @@ class ImplNode(unittest.TestCase):
                 super(TwoInputs, self).__init__()
 
             def params(self):
-                return {}
+                return []
 
             def needs(self):
                 return 2
@@ -63,7 +63,7 @@ class ImplNode(unittest.TestCase):
                 super(TwoInputsPacketable, self).__init__()
 
             def params(self):
-                return {}
+                return []
 
             def needs(self):
                 return 2
@@ -76,12 +76,12 @@ class ImplNode(unittest.TestCase):
                 super(ParamTester, self).__init__()
 
             def params(self):
-                return {
-                    "int": cls.param.OFnParamInt(),
-                    "bool": cls.param.OFnParamBool(),
-                    "float": cls.param.OFnParamFloat(),
-                    "str": cls.param.OFnParamStr(),
-                }
+                return [
+                    cls.param.OFnParamInt("int"),
+                    cls.param.OFnParamBool("bool"),
+                    cls.param.OFnParamFloat("float"),
+                    cls.param.OFnParamStr("str"),
+                ]
 
             def needs(self):
                 return 0

@@ -10,10 +10,10 @@ class MyOpA(op.OFnOp):
         return 0
 
     def params(self):
-        return {
-            "count": param.OFnParamInt(min=0),
-            "num": param.OFnParamFloat()
-        }
+        return [
+            param.OFnParamInt("count", min=0),
+            param.OFnParamFloat("num")
+        ]
 
     def packetable(self):
         return True
