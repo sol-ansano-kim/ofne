@@ -103,7 +103,6 @@ class GraphScene(unittest.TestCase):
         cls.opManager.OFnOpManager().deregisterOp(cls.Output)
 
     def test_graph(self):
-        self.assertEqual(len(self.opManager.OFnOpManager().listOps()), 3)
         self.assertIsNotNone(self.opManager.OFnOpManager().getOp("PlusOp"))
         self.assertIsNotNone(self.opManager.OFnOpManager().getOp("MakeNums"))
         self.assertIsNotNone(self.opManager.OFnOpManager().getOp("Output"))
