@@ -91,6 +91,18 @@ class OFnUINodeBody(QtWidgets.QGraphicsPathItem):
         super(OFnUINodeBody, self).paint(painter, option, widget)
 
 
+class OFnUIByPass(QtWidgets.QGraphicsLineItem):
+    def __init__(self, x1, y1, x2, y2, parent=None):
+        super(OFnUIByPass, self).__init__(x1, y1, x2, y2, parent=parent)
+        self.__pen = QtGui.QPen(QtGui.QColor(240, 192, 64))
+        self.__pen.setWidth(4)
+        self.__pen.setCapStyle(QtCore.Qt.RoundCap)
+        self.setPen(QtCore.Qt.NoPen)
+
+    def byPassed(self, v):
+        self.setPen(self.__pen if v else QtCore.Qt.NoPen)
+
+
 class OFnUINodeLabel(QtWidgets.QGraphicsSimpleTextItem):
     def __init__(self, name, parent=None):
         super(OFnUINodeLabel, self).__init__(parent=parent)
@@ -195,6 +207,13 @@ class OFnUINodeItem(QtCore.QObject, QtWidgets.QGraphicsItemGroup):
         self.__body.setPos(0, body_start)
         self.addToGroup(self.__body)
 
+        # bypass line
+        body_rect = self.__body.boundingRect()
+        self.__bypass_line = OFnUIByPass(2, 2, body_rect.width() - 4, body_rect.height() - 4)
+        self.__bypass_line.setPos(0, body_start)
+        self.__bypass_line.byPassed(self.__node.getByPassed())
+        self.addToGroup(self.__bypass_line)
+
         # port
         for i in range(self.__node.needs()):
             port = OFnUIPort(PortDirection.Input, i, parent=self)
@@ -211,6 +230,14 @@ class OFnUINodeItem(QtCore.QObject, QtWidgets.QGraphicsItemGroup):
             self.addToGroup(port)
             port.portClicked.connect(self.portClicked.emit)
             self.__output = port
+
+    def getByPassed(self):
+        return self.__node.getByPassed()
+
+    def setByPassed(self, v):
+        self.__bypass_line.byPassed(v)
+
+        return self.__node.setByPassed(v)
 
     def updateNodeName(self):
         self.__label.setLabel(self.__node.name())
@@ -475,6 +502,8 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
             self.__op_selector.show(self.mapFromGlobal(QtGui.QCursor.pos()))
         elif event.key() == QtCore.Qt.Key_F:
             self.fit()
+        elif event.key() == QtCore.Qt.Key_B:
+            self.__onByPass()
         elif event.key() == QtCore.Qt.Key_Delete:
             self.__deleteSelectedItems()
         elif event.modifiers() == QtCore.Qt.ControlModifier:
@@ -527,6 +556,19 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
 
         self.__slient = False
 
+    def __onByPass(self):
+        nds = [x for x in self.__graphic_scene.selectedItems() if isinstance(x, OFnUINodeItem) and x.node().type() != "Viewer"]
+        if nds:
+            cv = True
+            for n in nds:
+                if not n.getByPassed():
+                    cv = False
+                    break
+
+            for n in nds:
+                n.setByPassed(cv == False)
+
+            self.graphChanged.emit()
     def fit(self):
         rect = QtCore.QRect()
         selected = self.__graphic_scene.selectedItems()

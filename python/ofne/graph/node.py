@@ -7,6 +7,7 @@ class OFnGraphNode(abst._GraphNodeBase):
         super(OFnGraphNode, self).__init__(node)
         self.__node = node
         self.__latest_inputs = None
+        self.__bypassed_last_time = False
         self.__latest_params = None
         self.__packet = OFnPacket()
 
@@ -23,7 +24,7 @@ class OFnGraphNode(abst._GraphNodeBase):
     def __inputs(self):
         inputs = []
         for inp in self.__node.inputs():
-            if inp is not None:
+            if inp is not None and not inp.getByPassed():
                 inp = inp.id()
 
             inputs.append(inp)
@@ -35,6 +36,9 @@ class OFnGraphNode(abst._GraphNodeBase):
         self.__latest_params = None
 
     def isDirty(self):
+        if self.__bypassed_last_time != self.__node.getByPassed():
+            return True
+
         if self.__latest_inputs is None or self.__latest_params is None:
             return True
 
@@ -53,12 +57,16 @@ class OFnGraphNode(abst._GraphNodeBase):
 
     def evaluate(self, packetArray):
         if self.isDirty():
+            self.__bypassed_last_time = self.__node.getByPassed()
             self.__latest_inputs = self.__inputs()
             self.__latest_params = self.__params()
 
-            p = self.__node.operate(packetArray)
-            if self.__node.packetable():
-                self.__packet = p
+            if self.__node.getByPassed():
+                self.__packet = packetArray.packet(0)
+            else:
+                p = self.__node.operate(packetArray)
+                if self.__node.packetable():
+                    self.__packet = p
 
     def packet(self):
         return self.__packet

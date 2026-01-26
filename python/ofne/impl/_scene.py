@@ -105,6 +105,8 @@ class _OFnSceneImpl(object):
                 for uk, uv in node_desc["userData"].items():
                     new_node.setUserData(uk, uv)
 
+                new_node.setByPassed(node_desc["byPassed"])
+
                 id_map[node_desc["id"]] = new_node
 
             for con in data.get("connections", []):
@@ -162,6 +164,7 @@ class _OFnSceneImpl(object):
                     "name": n.name(),
                     "type": n.type(),
                     "id": n.id(),
+                    "byPassed": n.getByPassed(),
                     "params": params,
                     "userData": user_data
                 }
