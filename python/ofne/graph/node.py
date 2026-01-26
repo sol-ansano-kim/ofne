@@ -1,5 +1,11 @@
+import traceback
 from . import abst
 from ..core.packet import OFnPacket
+
+
+ResFailure = 0
+ResSuccess = 1
+ResNE = 2
 
 
 class OFnGraphNode(abst._GraphNodeBase):
@@ -10,6 +16,8 @@ class OFnGraphNode(abst._GraphNodeBase):
         self.__bypassed_last_time = False
         self.__latest_params = None
         self.__packet = OFnPacket()
+        self.__eval_res = ResNE
+        self.__error_msg = ""
 
     def node(self):
         return self.__node
@@ -56,6 +64,9 @@ class OFnGraphNode(abst._GraphNodeBase):
         return False
 
     def evaluate(self, packetArray):
+        self.__eval_res = ResNE
+        self.__error_msg = ""
+
         if self.isDirty():
             self.__bypassed_last_time = self.__node.getByPassed()
             self.__latest_inputs = self.__inputs()
@@ -64,9 +75,23 @@ class OFnGraphNode(abst._GraphNodeBase):
             if self.__node.getByPassed():
                 self.__packet = packetArray.packet(0)
             else:
-                p = self.__node.operate(packetArray)
-                if self.__node.packetable():
-                    self.__packet = p
+                try:
+                    p = self.__node.operate(packetArray)
+                    if self.__node.packetable():
+                        self.__packet = p
+
+                    self.__eval_res = ResSuccess
+                except Exception as e:
+                    self.__eval_res = ResFailure
+                    self.__error_msg = traceback.format_exc()
+                    self.__error_msg += f"\n=============================\n{e}"
+                    self.__packet = OFnPacket()
+
+    def result(self):
+        return self.__eval_res
+
+    def errorMessage(self):
+        return self.__error_msg
 
     def packet(self):
         return self.__packet

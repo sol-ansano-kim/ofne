@@ -95,6 +95,8 @@ class OFnGraphScene(abst._GraphSceneBase):
                     continue
 
                 gn.evaluate(packet.OFnPacketArray(packets))
+                if gn.result() == node.ResFailure:
+                    print(f"! Evaluation failed.\n{gn.errorMessage()}")
                 evaled.add(gn.node().id())
 
             waiting = pending + waiting
@@ -110,3 +112,12 @@ class OFnGraphScene(abst._GraphSceneBase):
         self.evaluate([node])
 
         return gn.packet()
+
+    def failedNodes(self):
+        return [x.node() for x in self.__graph_nodes.values() if x.result() == node.ResFailure]
+
+    def errorMessage(self, node):
+        gn = self.__graph_nodes.get(node.id())
+
+        if gn:
+            return gn.errorMessage()

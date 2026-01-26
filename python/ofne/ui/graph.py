@@ -92,6 +92,38 @@ class OFnUINodeBody(QtWidgets.QGraphicsPathItem):
         super(OFnUINodeBody, self).paint(painter, option, widget)
 
 
+class OFnUINodeError(QtCore.QObject, QtWidgets.QGraphicsPixmapItem):
+    errorClicked = QtCore.Signal()
+
+    def __init__(self, parent=None):
+        QtCore.QObject.__init__(self)
+        QtWidgets.QGraphicsPixmapItem.__init__(self, parent=parent)
+        self.__has_error = False
+        self.__error = QtWidgets.QApplication.style().standardIcon(QtWidgets.QStyle.StandardPixmap.SP_MessageBoxCritical).pixmap(NODE_DEFAULT_HEGIHT, NODE_DEFAULT_HEGIHT)
+        self.__error_hover = QtWidgets.QApplication.style().standardIcon(QtWidgets.QStyle.StandardPixmap.SP_MessageBoxCritical).pixmap(NODE_DEFAULT_HEGIHT + 5, NODE_DEFAULT_HEGIHT + 5)
+        self.__clear = QtGui.QPixmap()
+        self.setPixmap(self.__clear)
+        self.setAcceptHoverEvents(True)
+
+    def setError(self, v):
+        self.__has_error = v
+
+        if v:
+            self.setPixmap(self.__error)
+        else:
+            self.setPixmap(self.__clear)
+
+    def hoverEnterEvent(self, e):
+        self.setPixmap(self.__error_hover if self.__has_error else self.__clear)
+
+    def hoverLeaveEvent(self, e):
+        self.setPixmap(self.__error if self.__has_error else self.__clear)
+
+    def mousePressEvent(self, event):
+        if self.__has_error and event.button() == QtCore.Qt.LeftButton:
+            self.errorClicked.emit()
+
+
 class OFnUIByPass(QtWidgets.QGraphicsLineItem):
     def __init__(self, x1, y1, x2, y2, parent=None):
         super(OFnUIByPass, self).__init__(x1, y1, x2, y2, parent=parent)
@@ -185,6 +217,7 @@ class OFnUIPort(QtCore.QObject, QtWidgets.QGraphicsEllipseItem):
 
 class OFnUINodeItem(QtCore.QObject, QtWidgets.QGraphicsItemGroup):
     portClicked = QtCore.Signal(QtWidgets.QGraphicsItem)
+    errorClicked = QtCore.Signal(OFnNode)
 
     def __init__(self, node, parent=None):
         QtCore.QObject.__init__(self)
@@ -215,6 +248,12 @@ class OFnUINodeItem(QtCore.QObject, QtWidgets.QGraphicsItemGroup):
         self.__bypass_line.byPassed(self.__node.getByPassed())
         self.addToGroup(self.__bypass_line)
 
+        # critical
+        self.__error_item = OFnUINodeError(parent=self)
+        self.__error_item.setPos(body_rect.center().x() - NODE_DEFAULT_HEGIHT * 0.5, 0)
+        self.__error_item.errorClicked.connect(self.__errorClicked)
+        self.addToGroup(self.__error_item)
+
         # port
         for i in range(self.__node.needs()):
             port = OFnUIPort(PortDirection.Input, i, parent=self)
@@ -231,6 +270,12 @@ class OFnUINodeItem(QtCore.QObject, QtWidgets.QGraphicsItemGroup):
             self.addToGroup(port)
             port.portClicked.connect(self.portClicked.emit)
             self.__output = port
+
+    def __errorClicked(self):
+        self.errorClicked.emit(self.__node)
+
+    def setError(self, v):
+        self.__error_item.setError(v)
 
     def getByPassed(self):
         return self.__node.getByPassed()
@@ -402,6 +447,7 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         self.__scene.nodeDeleted.connect(self.__onDeleteNode)
         self.__scene.nodeConnected.connect(self.__onConnected)
         self.__scene.nodeDisconnected.connect(self.__onDisconnected)
+        self.__scene.evaluationFinished.connect(self.__onEvalFinished)
 
         old_gscene = self.__graphic_scene
         self.__graphic_scene = QtWidgets.QGraphicsScene()
@@ -416,6 +462,7 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
             old_scene.nodeDeleted.disconnect(self.__onDeleteNode)
             old_scene.nodeConnected.disconnect(self.__onConnected)
             old_scene.nodeDisconnected.disconnect(self.__onDisconnected)
+            old_scene.evaluationFinished.disconnect(self.__onEvalFinished)
 
             del old_scene
 
@@ -466,6 +513,10 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
             self.__connector = OFnUIConnector(item, item.direction())
             self.__graphic_scene.addItem(self.__connector)
 
+    def __showErrorMessage(self, node):
+        err = self.__scene.errorMessage(node)
+        QtWidgets.QToolTip.showText(QtGui.QCursor.pos(), err)
+
     def __onSelectionChanged(self):
         nds = [x for x in self.__graphic_scene.selectedItems() if isinstance(x, OFnUINodeItem)]
         if nds:
@@ -502,6 +553,7 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         item.setPos(px, py)
 
         item.portClicked.connect(self.__showConnector)
+        item.errorClicked.connect(self.__showErrorMessage)
 
         # TODO : hmm..
         if node.type() == "Viewer":
@@ -509,6 +561,14 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
 
         if not self.__slient:
             self.graphChanged.emit()
+
+    def __onEvalFinished(self):
+        for n in self.__nodes.values():
+            n.setError(False)
+        for fn in self.__scene.failedNodes():
+            en = self.__nodes.get(fn.id())
+            if en:
+                en.setError(True)
 
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_Tab:
