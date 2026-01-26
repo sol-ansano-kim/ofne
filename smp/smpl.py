@@ -9,7 +9,7 @@ class PlusOp(op.OFnOp):
         super(PlusOp, self).__init__()
 
     def params(self):
-        return {}
+        return []
 
     def needs(self):
         return 2
@@ -26,10 +26,10 @@ class MakeNums(op.OFnOp):
         super(MakeNums, self).__init__()
 
     def params(self):
-        return {
-            "count": param.OFnParamInt(min=0),
-            "num": param.OFnParamFloat()
-        }
+        return [
+            param.OFnParamInt("count", min=0),
+            param.OFnParamFloat("num", 0.0)
+        ]
 
     def needs(self):
         return 0
@@ -52,7 +52,7 @@ class Print(op.OFnOp):
         return False
 
     def params(self):
-        return {}
+        return []
 
     def operate(self, params, packetArray):
         print(packetArray.packet(0).data())

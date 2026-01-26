@@ -9,13 +9,21 @@ ParamTypeStr = 3
 
 
 class OFnParamBase(abst._ParamBase):
-    def __init__(self, default):
-        super(OFnParamBase, self).__init__()
+    def __init__(self, name, default, label=None):
+        super(OFnParamBase, self).__init__(name, default, label=label)
+        self.__name = name
+        self.__label = label or name
         self.__value = None
         self.__default = None
 
         self.set(default)
         self.__default = self.__value
+
+    def name(self):
+        return self.__name
+
+    def label(self):
+        return self.__label
 
     def default(self):
         return self.__default
@@ -40,8 +48,8 @@ class OFnParamBase(abst._ParamBase):
 
 
 class OFnParamBool(OFnParamBase):
-    def __init__(self, default=False):
-        super(OFnParamBool, self).__init__(default)
+    def __init__(self, name, default=False, label=None):
+        super(OFnParamBool, self).__init__(name, default, label=label)
 
     def type(self):
         return ParamTypeBool
@@ -50,18 +58,18 @@ class OFnParamBool(OFnParamBase):
         return isinstance(value, bool)
 
     def copy(self):
-        n = OFnParamBool(self.default())
+        n = OFnParamBool(self.name(), self.default(), label=self.label())
         n.set(self.get())
 
         return n
 
 
 class OFnParamStr(OFnParamBase):
-    def __init__(self, default="", valueList=None, enforceValueList=False):
+    def __init__(self, name, default="", label=None, valueList=None, enforceValueList=False):
         self.__value_list = list(valueList) if isinstance(valueList, (list, tuple, set)) else []
         self.__enforce_value_list = enforceValueList if self.__value_list else False
 
-        super(OFnParamStr, self).__init__(default)
+        super(OFnParamStr, self).__init__(name, default, label=label)
 
     def type(self):
         return ParamTypeStr
@@ -82,18 +90,18 @@ class OFnParamStr(OFnParamBase):
         return True
 
     def copy(self):
-        n = OFnParamStr(default=self.default(), valueList=self.__value_list, enforceValueList=self.__enforce_value_list)
+        n = OFnParamStr(self.name(), default=self.default(), label=self.label(), valueList=self.__value_list, enforceValueList=self.__enforce_value_list)
         n.set(self.get())
 
         return n
 
 
 class OFnNumericParam(OFnParamBase):
-    def __init__(self, default=None, min=None, max=None):
+    def __init__(self, name, default=None, label=None, min=None, max=None):
         self.__min = min
         self.__max = max
 
-        super(OFnNumericParam, self).__init__(default)
+        super(OFnNumericParam, self).__init__(name, default, label=label)
 
     def min(self):
         return self.__min
@@ -111,15 +119,15 @@ class OFnNumericParam(OFnParamBase):
         return True
 
     def copy(self):
-        n = self.__class__(default=self.default(), min=self.__min, max=self.__max)
+        n = self.__class__(self.name(), default=self.default(), label=self.label(), min=self.__min, max=self.__max)
         n.set(self.get())
 
         return n
 
 
 class OFnParamInt(OFnNumericParam):
-    def __init__(self, default=0, min=None, max=None):
-        super(OFnParamInt, self).__init__(default=default, min=min, max=max)
+    def __init__(self, name, default=0, label=None, min=None, max=None):
+        super(OFnParamInt, self).__init__(name, default=default, label=label, min=min, max=max)
 
     def type(self):
         return ParamTypeInt
@@ -135,8 +143,8 @@ class OFnParamInt(OFnNumericParam):
 
 
 class OFnParamFloat(OFnNumericParam):
-    def __init__(self, default=0.0, min=None, max=None):
-        super(OFnParamFloat, self).__init__(default=default, min=min, max=max)
+    def __init__(self, name, default=0.0, label=None, min=None, max=None):
+        super(OFnParamFloat, self).__init__(name, default=default, label=label, min=min, max=max)
 
     def type(self):
         return ParamTypeFloat
@@ -148,38 +156,37 @@ class OFnParamFloat(OFnNumericParam):
         return super(OFnParamFloat, self).isValid(value)
 
 
-class OFnParams(object):
-    def __init__(self, paramDict):
+class OFnParams(abst._ParamsBase):
+    def __init__(self, paramList):
         super(OFnParams).__init__()
-        self.__params = {}
-        for key, param in paramDict.items():
-            self.__params[key] = param.copy()
+        self.__params = []
+        self.__param_map = {}
+        for param in paramList:
+            cp = param.copy()
+            self.__params.append(cp)
+            self.__param_map[param.name()] = cp
 
     def copy(self):
-        nparm = {}
-        for key, param in self.__params.items():
-            nparm[key] = param.copy()
-
-        return OFnParams(nparm)
+        return OFnParams(self.__params)
 
     def getParam(self, key):
-        if key not in self.__params:
+        if key not in self.__param_map:
             return None
 
-        return self.__params[key].copy()
+        return self.__param_map[key].copy()
 
     def get(self, key, default=None):
-        if key not in self.__params:
+        if key not in self.__param_map:
             return default
 
-        return self.__params[key].get()
+        return self.__param_map[key].get()
 
     def set(self, key, value):
-        if key not in self.__params:
+        if key not in self.__param_map:
             return False
 
-        self.__params[key].set(value)
+        self.__param_map[key].set(value)
         return True
 
     def keys(self):
-        return sorted(self.__params.keys())
+        return [x.name() for x in self.__params]

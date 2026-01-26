@@ -9,7 +9,7 @@ class MyOpA(op.OFnOp):
         return 0
 
     def params(self):
-        return {}
+        return []
 
     def packetable(self):
         return False

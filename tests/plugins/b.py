@@ -9,7 +9,7 @@ class MyOpB(op.OFnOp):
         return 2
 
     def params(self):
-        return {}
+        return []
 
     def packetable(self):
         return True
