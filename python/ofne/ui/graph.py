@@ -350,6 +350,8 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         self.setDragMode(QtWidgets.QGraphicsView.RubberBandDrag)
 
         self.newScene()
+        self.verticalScrollBar().setValue(5000)
+        self.horizontalScrollBar().setValue(5000)
 
     def evaluate(self):
         if self.__scene:
@@ -368,6 +370,10 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         self.__acceptScene(scn)
         if makeViewer:
             scn.createNode("Viewer", userData={"ui:pos": (5000, 5000)})
+            r = self.__viewer_node.boundingRect()
+            # TODO : so lazy...
+            self.verticalScrollBar().setValue(4831)
+            self.horizontalScrollBar().setValue(4739)
 
         if not slient:
             self.graphChanged.emit()
