@@ -153,8 +153,10 @@ class OFnUIParams(QtWidgets.QFrame):
     def __buildParams(self):
         if self.__node:
             self.__type_label.setText(self.__node.type())
-            self.__name_label.setVisible(True)
-            self.__name_line.setVisible(True)
+            # TODO : hmm...
+            name_editable = self.__node.type() != "Viewer"
+            self.__name_label.setVisible(name_editable)
+            self.__name_line.setVisible(name_editable)
             self.__name_line.setText(self.__node.name())
 
             for pn in self.__node.paramNames():
