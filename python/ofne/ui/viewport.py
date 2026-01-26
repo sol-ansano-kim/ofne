@@ -270,7 +270,6 @@ class OFnUIGeometry(object):
     def __init__(self, hr):
         super(OFnUIGeometry, self).__init__()
         self.__hardware = hr
-        self.__yfactor = 1 if self.__hardware.implementation() == QtGui.QRhi.Metal else -1
         self.__vbuffer = self.__hardware.rhi().newBuffer(
             QtGui.QRhiBuffer.Dynamic,
             QtGui.QRhiBuffer.VertexBuffer,
@@ -304,9 +303,9 @@ class OFnUIGeometry(object):
         hw = iWidth * 0.5
         hh = iHeight * 0.5
         x0 = -hw * scale + planePosX
-        y0 = -hh * scale + planePosY * self.__yfactor
+        y0 = -hh * scale + planePosY
         x1 = hw * scale + planePosX
-        y1 = hh * scale + planePosY * self.__yfactor
+        y1 = hh * scale + planePosY
 
         p00 = (x0 * wf, y0 * hf)
         p10 = (x1 * wf, y0 * hf)
