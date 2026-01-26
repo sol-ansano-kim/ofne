@@ -22,6 +22,11 @@ class OFnUIOpSelector(QtWidgets.QLineEdit):
 
     def __init__(self, parent=None):
         super(OFnUIOpSelector, self).__init__(parent=parent)
+        oplist = set(op_manager.listOps())
+        if "Viewer" in oplist:
+            oplist.remove("Viewer")
+        self.__oplist = list(oplist)
+
         self.editingFinished.connect(self.__editingFinished)
         self.hide()
         self.blockSignals(True)
@@ -35,7 +40,7 @@ class OFnUIOpSelector(QtWidgets.QLineEdit):
         super(OFnUIOpSelector, self).keyPressEvent(evnt)
 
     def __updateCompleter(self):
-        comp = QtWidgets.QCompleter(op_manager.listOps())
+        comp = QtWidgets.QCompleter(self.__oplist)
         comp.popup().setStyleSheet("QListView { font-size : 13px; border: 1px solid #8B8B8B; color: #EDEDED; background-color: #222222; }")
         comp.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
         comp.setFilterMode(QtCore.Qt.MatchContains)
@@ -48,6 +53,9 @@ class OFnUIOpSelector(QtWidgets.QLineEdit):
         self.move(pos)
         self.setFocus(QtCore.Qt.PopupFocusReason)
         self.__updateCompleter()
+        self.completer().setCompletionPrefix("")
+        self.completer().complete()
+
         super(OFnUIOpSelector, self).show()
 
     def __editingFinished(self):
@@ -323,11 +331,14 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         if n:
             n.updateNodeName()
 
-    def newScene(self, slient=False):
+    def newScene(self, slient=False, makeViewer=True):
         if not slient:
             self.__slient = True
 
-        self.__acceptScene(model.OFnUIScene())
+        scn = model.OFnUIScene()
+        self.__acceptScene(scn)
+        if makeViewer:
+            scn.createNode("Viewer", userData={"ui:pos": (5000, 5000)})
 
         if not slient:
             self.graphChanged.emit()
@@ -336,7 +347,7 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
     def open(self, filepath):
         self.__slient = True
 
-        self.newScene(slient=True)
+        self.newScene(slient=True, makeViewer=False)
         if self.__scene.read(filepath):
             self.fit()
             self.sceneFilepathChanged.emit(self.__scene.filepath())

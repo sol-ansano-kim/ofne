@@ -21,3 +21,6 @@ class OFnOp(abst._OpBase):
 
     def operate(self, params, packetArray):
         raise exceptions.OFnNotImplementedError(self, "operate")
+
+    def unique(self):
+        return False

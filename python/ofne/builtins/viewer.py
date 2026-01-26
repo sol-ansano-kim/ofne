@@ -17,3 +17,6 @@ class Viewer(plugin.OFnOp):
 
     def operate(self, params, packetArray):
         resource.OFnViewResource().dump(packetArray.packet(0))
+
+    def unique(self):
+        return True

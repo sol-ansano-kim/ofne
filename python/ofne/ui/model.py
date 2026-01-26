@@ -112,9 +112,17 @@ class OFnUIScene(QtCore.QObject):
                 self.__connections.add(h)
                 self.nodeConnected.emit(h)
 
-    def createNode(self, opType):
+    def createNode(self, opType, paramDict=None, userData=None):
         nn = self.__scene.createNode(opType)
         if nn:
+            params = set(nn.paramNames())
+            for k, v in (paramDict or {}).items():
+                if k in params:
+                    nn.setParamValue(k, v)
+
+            for k, v in (userData or {}).items():
+                nn.setUserData(k, v)
+
             self.nodeCreated.emit(nn)
 
     def deleteNode(self, node):

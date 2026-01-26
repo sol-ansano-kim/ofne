@@ -15,6 +15,12 @@ class _OFnSceneImpl(object):
         if op is None:
             return None
 
+        if op.unique():
+            exist = False
+            for n in self.__nodes.values():
+                if n.type() == type:
+                    return None
+
         node = self.__node_class(self, op, name=name)
         self.__nodes[node.id()] = node
 
@@ -35,6 +41,10 @@ class _OFnSceneImpl(object):
 
     def deleteNode(self, node):
         if node.id() not in self.__nodes:
+            return False
+
+        # TODO : hmm...
+        if node.type() == "Viewer":
             return False
 
         self.__nodes.pop(node.id())
@@ -77,6 +87,9 @@ class _OFnSceneImpl(object):
             id_map = {}
             for node_desc in data.get("nodes", []):
                 new_node = self.createNode(node_desc["type"], name=node_desc["name"])
+                if new_node is None:
+                    continue
+
                 for pk, pv in node_desc["params"].items():
                     p = new_node.getParam(pk)
                     if p is None:
@@ -95,6 +108,9 @@ class _OFnSceneImpl(object):
                 id_map[node_desc["id"]] = new_node
 
             for con in data.get("connections", []):
+                if con["dst"] not in id_map or con["src"] not in id_map:
+                    continue
+
                 id_map[con["dst"]].connect(id_map[con["src"]], index=con["index"])
 
             return True
