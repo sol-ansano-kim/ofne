@@ -1,8 +1,8 @@
 # OFNE
 
 ## TODO
-bypass, viewer selection, reset graph transform after new scene
+reset graph transform after new scene
 
-error control, packet viewer
+error control, packet viewer, python expression, pixel inspector
 
 shift selection, group
