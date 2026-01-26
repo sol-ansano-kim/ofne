@@ -23,6 +23,7 @@ class OFnUIOpSelector(QtWidgets.QLineEdit):
     def __init__(self, parent=None):
         super(OFnUIOpSelector, self).__init__(parent=parent)
         oplist = set(op_manager.listOps())
+        # TODO : hmm..
         if "Viewer" in oplist:
             oplist.remove("Viewer")
         self.__oplist = list(oplist)
@@ -324,6 +325,7 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         super(OFnUINodeGraph, self).__init__(parent=parent)
         self.__slient = False
         self.__nodes = {}
+        self.__viewer_node = None
         self.__connections = {}
         self.__highlighted_port = None
         self.__connector = None
@@ -385,6 +387,7 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
 
     def __acceptScene(self, scene):
         self.__nodes = {}
+        self.__viewer_node = None
         self.__connections = {}
 
         old_scene = self.__scene
@@ -494,6 +497,10 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
 
         item.portClicked.connect(self.__showConnector)
 
+        # TODO : hmm..
+        if node.type() == "Viewer":
+            self.__viewer_node = item
+
         if not self.__slient:
             self.graphChanged.emit()
 
@@ -504,6 +511,8 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
             self.fit()
         elif event.key() == QtCore.Qt.Key_B:
             self.__onByPass()
+        elif event.key() == QtCore.Qt.Key_V:
+            self.__onToView()
         elif event.key() == QtCore.Qt.Key_Delete:
             self.__deleteSelectedItems()
         elif event.modifiers() == QtCore.Qt.ControlModifier:
@@ -569,6 +578,14 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
                 n.setByPassed(cv == False)
 
             self.graphChanged.emit()
+
+    def __onToView(self):
+        nds = [x for x in self.__graphic_scene.selectedItems() if isinstance(x, OFnUINodeItem) and x.node().packetable()]
+        if nds and self.__viewer_node:
+            cur = self.__viewer_node.node().inputs()[0]
+            if not cur or cur.id() != nds[-1].node().id():
+                self.__scene.connect(nds[-1].node(), self.__viewer_node.node(), 0)
+
     def fit(self):
         rect = QtCore.QRect()
         selected = self.__graphic_scene.selectedItems()
