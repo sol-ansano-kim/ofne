@@ -37,17 +37,9 @@ def _validPacketData(data):
 def _getOCIO(path):
     if re.match(r"^builtin\:", path):
         path = re.sub(r"^builtin\:", "", path)
-        try:
-            return ocio.Config.CreateFromBuiltinConfig(path)
-        except:
-            pass
+        return ocio.Config.CreateFromBuiltinConfig(path)
     else:
-        try:
-            return ocio.Config.CreateFromFile(path)
-        except:
-            pass
-
-    return None
+        return ocio.Config.CreateFromFile(path)
 
 
 def _getColorSpaceName(config, inpt):
@@ -55,13 +47,6 @@ def _getColorSpaceName(config, inpt):
         inpt = ROLES[inpt]
 
     return inpt
-
-
-def _getNamedTransform(config, name):
-    try:
-        return config.getNamedTransform(name)
-    except:
-        return Nonex
 
 
 class OCIOExponentTransform(plugin.OFnOp):
@@ -82,7 +67,6 @@ class OCIOExponentTransform(plugin.OFnOp):
         return True
 
     def operate(self, params, packetArray):
-
         d = packetArray.packet(0).data()
 
         if not _validPacketData(d):
@@ -175,25 +159,9 @@ class OCIOColorSpaceTransform(plugin.OFnOp):
             return plugin.OFnPacket()
 
         config = _getOCIO(config_path)
-        if config is None:
-            return plugin.OFnPacket()
-
         src = _getColorSpaceName(config, src)
-        if src is None:
-            return plugin.OFnPacket()
-
         dst = _getColorSpaceName(config, dst)
-        if dst is None:
-            return plugin.OFnPacket()
-
-        proc = None
-        try:
-            proc = config.getProcessor(src, dst).getDefaultCPUProcessor()
-        except:
-            pass
-
-        if proc is None:
-            return plugin.OFnPacket()
+        proc = config.getProcessor(src, dst).getDefaultCPUProcessor()
 
         func = proc.applyRGB if d.shape[2] == 3 else proc.applyRGBA
         func(d)
@@ -235,22 +203,9 @@ class OCIODisplayViewTransform(plugin.OFnOp):
             return plugin.OFnPacket()
 
         config = _getOCIO(config_path)
-        if config is None:
-            return plugin.OFnPacket()
-
         src = _getColorSpaceName(config, src)
-        if src is None:
-            return plugin.OFnPacket()
-
         proc = None
-        try:
-            proc = config.getProcessor(src, display, view, direction).getDefaultCPUProcessor()
-        except:
-            import traceback
-            traceback.print_exc()
-
-        if proc is None:
-            return plugin.OFnPacket()
+        proc = config.getProcessor(src, display, view, direction).getDefaultCPUProcessor()
 
         func = proc.applyRGB if d.shape[2] == 3 else proc.applyRGBA
         func(d)
@@ -292,18 +247,8 @@ class OCIONamedTransform(plugin.OFnOp):
         if config is None:
             return plugin.OFnPacket()
 
-        nt = _getNamedTransform(config, name)
-        if nt is None:
-            return plugin.OFnPacket()
-
-        proc = None
-        try:
-            proc = config.getProcessor(nt, direction).getDefaultCPUProcessor()
-        except:
-            pass
-
-        if proc is None:
-            return plugin.OFnPacket()
+        nt = config.getNamedTransform(name)
+        proc = config.getProcessor(nt, direction).getDefaultCPUProcessor()
 
         func = proc.applyRGB if d.shape[2] == 3 else proc.applyRGBA
         func(d)
@@ -339,14 +284,7 @@ class OCIOBuiltinTransform(plugin.OFnOp):
         if not name:
             return plugin.OFnPacket()
 
-        proc = None
-        try:
-            proc = RAW_CONFIG.getProcessor(ocio.BuiltinTransform(name), direction).getDefaultCPUProcessor()
-        except:
-            pass
-
-        if proc is None:
-            return plugin.OFnPacket()
+        proc = RAW_CONFIG.getProcessor(ocio.BuiltinTransform(name), direction).getDefaultCPUProcessor()
 
         func = proc.applyRGB if d.shape[2] == 3 else proc.applyRGBA
         func(d)

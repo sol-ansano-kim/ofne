@@ -21,12 +21,12 @@ class ReadImage(plugin.OFnOp):
     def operate(self, params, packetArray):
         path = params.get("path")
 
-        if not path or not os.path.isfile(path):
+        if not path:
             return plugin.OFnPacket()
 
-        try:
-            buf = oiio.ImageBuf(path)
-        except:
-            return plugin.OFnPacket()
+        if not os.path.isfile(path):
+            raise Exception("No such image file")
+
+        buf = oiio.ImageBuf(path)
 
         return plugin.OFnPacket(data=buf.get_pixels(format=oiio.FLOAT))
