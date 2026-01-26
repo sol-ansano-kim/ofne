@@ -477,8 +477,8 @@ class OFnUIViewport(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super(OFnUIViewport, self).__init__(parent=parent)
         self.__viewer = OFnUIView()
-        self.setMinimumWidth(200)
-        self.setMinimumHeight(200)
+        self.setMinimumWidth(300)
+        self.setMinimumHeight(300)
         layout = QtWidgets.QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         self.__format_selector = QtWidgets.QComboBox(parent=self)
