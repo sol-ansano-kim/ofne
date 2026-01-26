@@ -33,7 +33,7 @@ class GraphScene(unittest.TestCase):
             cls.opManager = opManager
 
             class PlusOp(op.OFnOp):
-                def __init__(self):
+                def __init__(self, verbose=True):
                     super(PlusOp, self).__init__()
 
                 def params(self):
@@ -84,11 +84,12 @@ class GraphScene(unittest.TestCase):
 
                 def operate(self, params, packetArray):
                     GraphScene.count += 1
-                    pass
+                    cls.Res = packetArray.packet(0).data()
 
             cls.PlusOp = PlusOp()
             cls.MakeNums = MakeNums()
             cls.Output = Output()
+            cls.Res = 0
             cls.count = 0
 
             opManager.OFnOpManager().reloadPlugins()
@@ -103,6 +104,7 @@ class GraphScene(unittest.TestCase):
         cls.opManager.OFnOpManager().deregisterOp(cls.Output)
 
     def test_graph(self):
+        GraphScene.count = 0
         self.assertIsNotNone(self.opManager.OFnOpManager().getOp("PlusOp"))
         self.assertIsNotNone(self.opManager.OFnOpManager().getOp("MakeNums"))
         self.assertIsNotNone(self.opManager.OFnOpManager().getOp("Output"))
@@ -179,3 +181,60 @@ class GraphScene(unittest.TestCase):
         p1.connect(m1, 1)
         graph_scene.packet(op)
         self.assertEqual(GraphScene.count, 25)
+
+    def test_graph_bypass(self):
+        GraphScene.count = 0
+        scn = self.core_scene.OFnScene()
+        graph_scene = self.graph_scene.OFnGraphScene(scn)
+
+        p1 = scn.createNode("PlusOp")
+        p2 = scn.createNode("PlusOp")
+        p3 = scn.createNode("PlusOp")
+        m1 = scn.createNode("MakeNums")
+        m2 = scn.createNode("MakeNums")
+        op = scn.createNode("Output")
+        m1.setParamValue("num", 1.0)
+        m1.setParamValue("count", 1)
+        m2.setParamValue("num", 2.5)
+        m2.setParamValue("count", 1)
+
+        p1.connect(m1, 0)
+        p1.connect(m2, 1)
+        p2.connect(m1, 0)
+        p2.connect(p1, 1)
+        p3.connect(p1, 0)
+        p3.connect(p2, 1)
+        op.connect(p3)
+
+        graph_scene.packet(op)
+        self.assertEqual(GraphScene.count, 6)
+        self.assertEqual(GraphScene.Res[0], 8.0)
+        p2.setByPassed(True)
+        graph_scene.packet(op)
+        self.assertEqual(GraphScene.count, 8)
+        self.assertEqual(GraphScene.Res[0], 4.5)
+        p2.setByPassed(False)
+        graph_scene.packet(op)
+        self.assertEqual(GraphScene.count, 11)
+        self.assertEqual(GraphScene.Res[0], 8.0)
+        p2.setByPassed(True)
+        p3.setByPassed(True)
+        graph_scene.packet(op)
+        self.assertEqual(GraphScene.count, 12)
+        self.assertEqual(GraphScene.Res[0], 3.5)
+        p2.setByPassed(False)
+        graph_scene.packet(op)
+        self.assertEqual(GraphScene.count, 14)
+        self.assertEqual(GraphScene.Res[0], 3.5)
+        p1.setByPassed(True)
+        graph_scene.packet(op)
+        self.assertEqual(GraphScene.count, 16)
+        self.assertEqual(GraphScene.Res[0], 1.0)
+        p3.setByPassed(False)
+        graph_scene.packet(op)
+        self.assertEqual(GraphScene.count, 18)
+        self.assertEqual(GraphScene.Res[0], 3.0)
+        p2.setByPassed(True)
+        graph_scene.packet(op)
+        self.assertEqual(GraphScene.count, 20)
+        self.assertEqual(GraphScene.Res[0], 2.0)

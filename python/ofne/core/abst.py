@@ -77,6 +77,12 @@ class _NodeBase(object):
     def clearUserData(self):
         raise OFnNotImplementedError(self, "clearUserDatasetUserData")
 
+    def getByPassed(self):
+        raise OFnNotImplementedError(self, "getByPassed")
+
+    def setByPassed(self, b):
+        raise OFnNotImplementedError(self, "setByPassed")
+
 
 class _SceneBase(object):
     def __init__(self):

@@ -9,6 +9,7 @@ class OFnNode(abst._NodeBase):
         self.__scene = scene
         self.__impl = _node._OFnNodeImpl(op, self)
         self.__name = None
+        self.__bypassed = False
         self.rename(name or self.type())
 
     def id(self):
@@ -96,3 +97,9 @@ class OFnNode(abst._NodeBase):
 
     def clearUserData(self):
         self.__impl.clearUserData()
+
+    def getByPassed(self):
+        return self.__bypassed
+
+    def setByPassed(self, b):
+        self.__bypassed = b
