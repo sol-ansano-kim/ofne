@@ -13,6 +13,7 @@ class OFnUIScene(QtCore.QObject):
     nodeDeleted = QtCore.Signal(str)
     nodeConnected = QtCore.Signal(tuple)
     nodeDisconnected = QtCore.Signal(tuple)
+    evaluationFinished = QtCore.Signal()
 
     def __init__(self):
         super(OFnUIScene, self).__init__()
@@ -187,6 +188,13 @@ class OFnUIScene(QtCore.QObject):
         target_nodes = [x for x in self.__scene.nodes() if not x.packetable()]
         if target_nodes:
             self.__scene_graph.evaluate(target_nodes)
+            self.evaluationFinished.emit()
+
+    def failedNodes(self):
+        return self.__scene_graph.failedNodes()
+
+    def errorMessage(self, node):
+        return self.__scene_graph.errorMessage(node)
 
 
 class OFnUIViewResource(object):

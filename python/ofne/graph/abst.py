@@ -20,6 +20,12 @@ class _GraphNodeBase(object):
     def packet(self):
         raise OFnNotImplementedError(self, "packet")
 
+    def result(self):
+        raise OFnNotImplementedError(self, "result")
+
+    def errorMessage(self):
+        raise OFnNotImplementedError(self, "errorMessage")
+
 
 class _GraphSceneBase(object):
     def __init__(self, scene):
@@ -30,3 +36,9 @@ class _GraphSceneBase(object):
 
     def packet(self, nodes):
         raise OFnNotImplementedError(self, "packet")
+
+    def failedNodes(self):
+        raise OFnNotImplementedError(self, "failedNodes")
+
+    def errorMessage(self, node):
+        raise OFnNotImplementedError(self, "errorMessage")
