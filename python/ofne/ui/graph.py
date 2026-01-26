@@ -511,8 +511,6 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
             self.fit()
         elif event.key() == QtCore.Qt.Key_B:
             self.__onByPass()
-        elif event.key() == QtCore.Qt.Key_V:
-            self.__onToView()
         elif event.key() == QtCore.Qt.Key_Delete:
             self.__deleteSelectedItems()
         elif event.modifiers() == QtCore.Qt.ControlModifier:
@@ -520,6 +518,8 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
                 self.__copyToClipboard()
             elif event.key() == QtCore.Qt.Key_V:
                 self.__loadFromClipboard()
+        elif event.key() == QtCore.Qt.Key_V:
+            self.__onToView()
 
     def __copyToClipboard(self):
         selected_nodes = []
