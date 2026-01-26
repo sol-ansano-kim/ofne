@@ -339,6 +339,7 @@ class OFnUIView(QtGui.QWindow):
             self.setSurfaceType(QtGui.QSurface.MetalSurface)
             rhi_impl = QtGui.QRhi.Metal
 
+        self.__wait = False
         self.__hardware = OFnUIHardwareResources(self, rhi_impl)
         self.__tex_shader = OFnUITextureShader(self.__hardware)
         self.__vertices = OFnUIGeometry(self.__hardware)
@@ -353,6 +354,12 @@ class OFnUIView(QtGui.QWindow):
 
         self.resize(1024, 1024)
         self.__hardware.swapchain().setWindow(self)
+
+    def setFormat(self, format):
+        self.__wait = True
+        self.__hardware.setFormat(format)
+        self.__wait = False
+        self.__geom_dirty = True
 
     def resizeEvent(self, event):
         self.__geom_dirty = True
@@ -391,6 +398,9 @@ class OFnUIView(QtGui.QWindow):
         self.__vertices.updateGeometry(*(self.__hardware.pixelSize()), *(self.__tex_shader.imageSize()), self.__img_pos.x(), self.__img_pos.y(), self.__scale)
 
     def render(self):
+        if self.__wait:
+            return
+
         if not self.isExposed():
             return
 
@@ -472,7 +482,15 @@ class OFnUIViewport(QtWidgets.QWidget):
         self.setMinimumHeight(200)
         layout = QtWidgets.QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
+        self.__format_selector = QtWidgets.QComboBox(parent=self)
+        self.__format_selector.addItems(["SDR", "HDR10"])
+        self.__format_selector.setMaximumWidth(100)
         layout.addWidget(QtWidgets.QWidget.createWindowContainer(self.__viewer))
+        layout.addWidget(self.__format_selector)
+        self.__format_selector.currentIndexChanged.connect(self.__formatChanged)
+
+    def __formatChanged(self, *args):
+        self.__viewer.setFormat(QtGui.QRhiSwapChain.Format.HDR10 if self.__format_selector.currentText() == "HDR10" else QtGui.QRhiSwapChain.Format.SDR)
 
     def fit(self):
         self.__viewer.fit()
