@@ -1,4 +1,8 @@
 # OFNE
 
 ## TODO
-bypass, shift selection, packet viewer, error control, group, rhi impl option, viewer selection, viewer unique, param order, show completer always
+bypass, param order, viewer selection, reset graph transform after new scene
+
+error control, packet viewer
+
+shift selection, group
