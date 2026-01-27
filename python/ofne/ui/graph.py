@@ -26,7 +26,7 @@ class OFnUIOpSelector(QtWidgets.QLineEdit):
         # TODO : hmm..
         if "Viewer" in oplist:
             oplist.remove("Viewer")
-        self.__oplist = list(oplist)
+        self.__oplist = sorted(list(oplist))
 
         self.editingFinished.connect(self.__editingFinished)
         self.hide()

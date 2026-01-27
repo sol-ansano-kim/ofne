@@ -87,6 +87,8 @@ class OFnUIStrCombo(QtWidgets.QComboBox):
     def __init__(self, node, paramName, parent=None):
         super(OFnUIStrCombo, self).__init__(parent=parent)
         self.setFocusPolicy(QtCore.Qt.ClickFocus)
+        self.__emit_when_leave = False
+        self.__enter = False
         self.__node = node
         self.__param = self.__node.getParam(paramName)
         self.__param_name = paramName
@@ -99,10 +101,20 @@ class OFnUIStrCombo(QtWidgets.QComboBox):
         if self.__param.enforceValueList():
             self.setCurrentIndex(self.findText(self.__node.getParamValue(self.__param_name)))
         else:
+            self.__emit_when_leave = True
             self.setEditable(True)
             self.setCurrentText(self.__node.getParamValue(self.__param_name))
 
         self.currentIndexChanged.connect(self.__changed)
+
+    def enterEvent(self, event):
+        self.__enter = True
+
+    def leaveEvent(self, event):
+        if self.__enter and self.__emit_when_leave:
+            self.__changed()
+
+        self.__enter = False
 
     def __changed(self, *args):
         if self.__node.getParamValue(self.__param_name) != self.currentText():
