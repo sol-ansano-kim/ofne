@@ -732,6 +732,10 @@ class OFnUIPixelDraw(QtWidgets.QWidget):
                 y = r * 30
                 painter.fillRect(x, y, 30, 30, self.__colors[r * 5 + c])
 
+        painter.setPen(QtGui.QPen(QtCore.Qt.red))
+        painter.drawLine(50, 75, 100, 75)
+        painter.drawLine(75, 50, 75, 100)
+
         painter.end()
 
 
