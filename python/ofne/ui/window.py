@@ -73,7 +73,10 @@ class OFnUIMain(QtWidgets.QMainWindow):
 
     def __aimPositionChanged(self):
         pos, colors = self.__viewport.getAimPixel()
-        self.__viewport_settings.setPixel(*pos, colors)
+        if pos is None:
+            self.__viewport_settings.resetInspector()
+        else:
+            self.__viewport_settings.setPixel(*pos, colors)
 
     def __onNodeSelected(self, node):
         self.__params.setNode(node)
