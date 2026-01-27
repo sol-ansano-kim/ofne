@@ -1,8 +1,8 @@
 # OFNE
 
 ## TODO
-ExponentWithLinearTransform, AllocationTransform, FileTransform, MatrixTransform, LogCameraTransform
+MatrixTransform, LogCameraTransform
 
-menu hot keys, aim on draw
+menu hot keys
 
-shift selection, group, packet viewer
+shift selection, backdrop, packet viewer
