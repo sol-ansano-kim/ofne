@@ -44,7 +44,7 @@ class ConstantImage(plugin.OFnOp):
             plugin.OFnParamFloat("R", 1.0),
             plugin.OFnParamFloat("G", 1.0),
             plugin.OFnParamFloat("B", 1.0),
-            plugin.OFnParamFloat("A", 1.0),
+            plugin.OFnParamFloat("A", 1.0, min=0.0, max=1.0),
         ]
 
     def needs(self):
