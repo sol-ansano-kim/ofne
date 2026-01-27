@@ -42,6 +42,21 @@ class _TypedLineEditor(QtWidgets.QLineEdit):
         self.__refresh()
 
 
+class OFnUICodeParam(QtWidgets.QPlainTextEdit):
+    paramChanged = QtCore.Signal()
+
+    def __init__(self, node, paramName, parent=None):
+        super(OFnUICodeParam, self).__init__(parent=parent)
+        self.__node = node
+        self.__param_name = paramName
+        self.setPlainText(node.getParamValue(paramName))
+
+    def focusOutEvent(self, event):
+        self.__node.setParamValue(self.__param_name, self.toPlainText())
+        self.paramChanged.emit()
+        super(OFnUICodeParam, self).focusOutEvent(event)
+
+
 class OFnUIIntParam(_TypedLineEditor):
     def __init__(self, node, paramName, parent=None):
         super(OFnUIIntParam, self).__init__(node, paramName, parent=parent)
@@ -173,6 +188,8 @@ class OFnUIParams(QtWidgets.QFrame):
                         pw = OFnUIStrCombo(self.__node, pn, parent=self)
                     else:
                         pw = OFnUIStrParam(self.__node, pn, parent=self)
+                elif p.type() == param.ParamTypeCode:
+                    pw = OFnUICodeParam(self.__node, pn, parent=self)
 
                 layout = QtWidgets.QHBoxLayout()
                 label = QtWidgets.QLabel(pn, parent=self)
