@@ -214,6 +214,42 @@ class ParamTest(unittest.TestCase):
         s5.set("any")
         self.assertEqual(s5.get(), "any")
 
+    def test_code(self):
+        s1 = self.param.OFnParamCode("s")
+        self.assertIsNotNone(s1)
+        self.assertEqual(s1.type(), self.param.ParamTypeCode)
+        self.assertEqual(s1.default(), "")
+        self.assertEqual(s1.get(), "")
+        s1.set("abc")
+        self.assertEqual(s1.get(), "abc")
+        self.assertEqual(s1.default(), "")
+        self.assertFalse(s1.isValid(True))
+        self.assertFalse(s1.isValid(1))
+        self.assertFalse(s1.isValid(0.123))
+        self.assertTrue(s1.isValid("123"))
+        self.assertTrue(s1.isValid("abc"))
+
+        s2 = s1.copy()
+        s2.set("def")
+        self.assertEqual(s2.get(), "def")
+        self.assertEqual(s2.default(), "")
+        self.assertFalse(s1.isValid(True))
+        self.assertFalse(s1.isValid(1))
+        self.assertFalse(s1.isValid(0.123))
+        self.assertTrue(s1.isValid("123"))
+        self.assertTrue(s1.isValid("abc"))
+
+        s3 = self.param.OFnParamCode("s", default="ghi")
+        self.assertEqual(s3.default(), "ghi")
+        self.assertEqual(s3.get(), "ghi")
+
+        with self.assertRaises(self.exceptions.OFnInvalidParamValueError):
+            s1.set(True)
+        with self.assertRaises(self.exceptions.OFnInvalidParamValueError):
+            s1.set(1)
+        with self.assertRaises(self.exceptions.OFnInvalidParamValueError):
+            s1.set(-0.123)
+
     def test_label(self):
         p = self.param.OFnParamBool("b")
         self.assertEqual(p.name(), "b")

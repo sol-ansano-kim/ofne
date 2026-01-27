@@ -6,6 +6,7 @@ ParamTypeBool = 0
 ParamTypeInt = 1
 ParamTypeFloat = 2
 ParamTypeStr = 3
+ParamTypeCode = 4
 
 
 class OFnParamBase(abst._ParamBase):
@@ -91,6 +92,26 @@ class OFnParamStr(OFnParamBase):
 
     def copy(self):
         n = OFnParamStr(self.name(), default=self.default(), label=self.label(), valueList=self.__value_list, enforceValueList=self.__enforce_value_list)
+        n.set(self.get())
+
+        return n
+
+
+class OFnParamCode(OFnParamBase):
+    def __init__(self, name, default="", label=None):
+        super(OFnParamCode, self).__init__(name, default=default, label=None)
+
+    def type(self):
+        return ParamTypeCode
+
+    def isValid(self, value):
+        if not isinstance(value, str):
+            return False
+
+        return True
+
+    def copy(self):
+        n = OFnParamCode(self.name(), default=self.default(), label=self.label())
         n.set(self.get())
 
         return n
