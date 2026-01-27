@@ -133,7 +133,6 @@ class OFnUITextureShader(object):
         self.__texture = None
         self.__binding = None
         self.__pipeline = None
-        self.__batch = None
 
         with open(os.path.join(os.path.dirname(__file__), "shaders/quad.vert.qsb"), "rb") as f:
             self.__vs = QtGui.QShader.fromSerialized(QtCore.QByteArray(f.read()))
@@ -153,7 +152,8 @@ class OFnUITextureShader(object):
         )
         self.__sampler.create()
 
-        self.__updateTexture()
+    def getPixelValues(self, x, y):
+        return self.__view.getPixelValues(x, y)
 
     def __del__(self):
         self.destroy()
@@ -180,12 +180,6 @@ class OFnUITextureShader(object):
         cbuffer.setGraphicsPipeline(self.__pipeline)
         cbuffer.setShaderResources(self.__binding)
 
-    def popBatch(self):
-        b = self.__batch
-        self.__batch = None
-
-        return b
-
     def binding(self):
         return self.__binding
 
@@ -199,12 +193,11 @@ class OFnUITextureShader(object):
 
     def isDirty(self):
         if self.__view.isDirty():
-            self.__updateTexture()
             return True
 
         return False
 
-    def __updateTexture(self):
+    def updateTexture(self, batch):
         self.__resetResources()
 
         self.__texture = self.__hardware.rhi().newTexture(QtGui.QRhiTexture.RGBA32F, self.__view.image().size(), 1)
@@ -240,7 +233,7 @@ class OFnUITextureShader(object):
         self.__pipeline.setSampleCount(self.__hardware.swapchain().sampleCount())
 
         layout = QtGui.QRhiVertexInputLayout()
-        layout.setBindings([QtGui.QRhiVertexInputBinding(16)]) # 4 floats * 4 bytes
+        layout.setBindings([QtGui.QRhiVertexInputBinding(16)])
         layout.setAttributes(
             [
                 QtGui.QRhiVertexInputAttribute(
@@ -262,8 +255,80 @@ class OFnUITextureShader(object):
         self.__pipeline.setShaderResourceBindings(self.__binding)
         self.__pipeline.create()
 
-        self.__batch = self.__hardware.rhi().nextResourceUpdateBatch()
-        self.__batch.uploadTexture(self.__texture, self.__view.image())
+        batch.uploadTexture(self.__texture, self.__view.image())
+
+
+class OFnUIAimShader(object):
+    def __init__(self, hr):
+        self.__hardware = hr
+        self.__pipeline = None
+        self.__binding = None
+
+        with open(os.path.join(os.path.dirname(__file__), "shaders/aim.vert.qsb"), "rb") as f:
+            self.__vs = QtGui.QShader.fromSerialized(QtCore.QByteArray(f.read()))
+        with open(os.path.join(os.path.dirname(__file__), "shaders/aim.frag.qsb"), "rb") as f:
+            self.__fs = QtGui.QShader.fromSerialized(QtCore.QByteArray(f.read()))
+
+        if not (self.__vs.isValid() and self.__fs.isValid()):
+            raise RuntimeError("AIM SHADER ERROR")
+
+        self.updateShader()
+
+    def __del__(self):
+        self.destroy()
+
+    def destroy(self):
+        self.__resetResources()
+
+    def __resetResources(self):
+        if self.__binding:
+            self.__binding.destroy()
+            self.__binding = None
+
+        if self.__pipeline:
+            self.__pipeline.destroy()
+            self.__pipeline = None
+
+    def acceptCommandBuffer(self, cbuffer):
+        cbuffer.setGraphicsPipeline(self.__pipeline)
+        cbuffer.setShaderResources(self.__binding)
+
+    def updateShader(self):
+        self.__resetResources()
+
+        self.__binding = self.__hardware.rhi().newShaderResourceBindings()
+        self.__binding.create()
+
+        self.__pipeline = self.__hardware.rhi().newGraphicsPipeline()
+        self.__pipeline.setShaderStages([
+            QtGui.QRhiShaderStage(
+                QtGui.QRhiShaderStage.Vertex, self.__vs
+            ),
+            QtGui.QRhiShaderStage(
+                QtGui.QRhiShaderStage.Fragment, self.__fs
+            )
+        ])
+
+        self.__pipeline.setRenderPassDescriptor(self.__hardware.renderPass())
+        self.__pipeline.setTopology(QtGui.QRhiGraphicsPipeline.Triangles)
+
+        layout = QtGui.QRhiVertexInputLayout()
+        layout.setBindings([QtGui.QRhiVertexInputBinding(8)])
+
+        layout.setAttributes([
+            QtGui.QRhiVertexInputAttribute(
+                0,
+                0,
+                QtGui.QRhiVertexInputAttribute.Float2,
+                0
+            )
+        ])
+
+        self.__pipeline.setVertexInputLayout(layout)
+        self.__pipeline.setSampleCount(self.__hardware.swapchain().sampleCount())
+        self.__pipeline.setShaderResourceBindings(self.__binding)
+
+        self.__pipeline.create()
 
 
 class OFnUIGeometry(object):
@@ -273,11 +338,9 @@ class OFnUIGeometry(object):
         self.__vbuffer = self.__hardware.rhi().newBuffer(
             QtGui.QRhiBuffer.Dynamic,
             QtGui.QRhiBuffer.VertexBuffer,
-            96 # 6 vertices * 16bytes
+            96
         )
         self.__vbuffer.create()
-
-        self.__batch = None
 
     def __del__(self):
         self.destroy()
@@ -290,13 +353,7 @@ class OFnUIGeometry(object):
     def acceptCommandBuffer(self, cbuffer):
         cbuffer.setVertexInput(0, [(self.__vbuffer, 0)])
 
-    def popBatch(self):
-        b = self.__batch
-        self.__batch = None
-
-        return b
-
-    def updateGeometry(self, pixelWidth, pixelHeight, iWidth, iHeight, planePosX, planePosY, scale):
+    def updateGeometry(self, batch, pixelWidth, pixelHeight, iWidth, iHeight, planePosX, planePosY, scale):
         wf = 2.0 / max(1, pixelWidth)
         hf = -2.0 / max(1, pixelHeight)
 
@@ -318,16 +375,74 @@ class OFnUIGeometry(object):
         uv01 = (0.0, 1.0)
 
         verts = [
-            (*p00, *uv00), (*p10, *uv10), (*p11, *uv11),
-            (*p00, *uv00), (*p11, *uv11), (*p01, *uv01),
+            (*p00, *uv00),
+            (*p10, *uv10),
+            (*p11, *uv11),
+            (*p00, *uv00),
+            (*p11, *uv11),
+            (*p01, *uv01),
         ]
         data = struct.pack("<" + "f" * (4 * 6), *[f for v in verts for f in v])
 
-        self.__batch = self.__hardware.rhi().nextResourceUpdateBatch()
-        self.__batch.updateDynamicBuffer(self.__vbuffer, 0, len(data), data)
+        batch.updateDynamicBuffer(self.__vbuffer, 0, len(data), data)
+
+
+class OFnUIAimGeometry(object):
+    def __init__(self, hr):
+        super(OFnUIAimGeometry, self).__init__()
+        self.__hardware = hr
+        self.__vbuffer = self.__hardware.rhi().newBuffer(
+            QtGui.QRhiBuffer.Dynamic,
+            QtGui.QRhiBuffer.VertexBuffer,
+            96
+        )
+
+        self.__vbuffer.create()
+
+    def destroy(self):
+        if self.__vbuffer:
+            self.__vbuffer.destroy()
+            self.__vbuffer = None
+
+    def acceptCommandBuffer(self, cbuffer):
+        cbuffer.setVertexInput(0, [(self.__vbuffer, 0)])
+
+    def __quad(self, x0, y0, x1, y1):
+        return [
+            (x0, y0),
+            (x1, y0),
+            (x1, y1),
+            (x0, y0),
+            (x1, y1),
+            (x0, y1),
+        ]
+
+    def updateGeometry(self, batch, iX, iY, pixelWidth, pixelHeight, iWidth, iHeight, imagePosX, imagePosY, scale):
+        wf = 2.0 / max(1.0, pixelWidth)
+        hf = -2.0 / max(1.0, pixelHeight)
+
+        scrx = (iX + 0.5) - (iWidth * 0.5)
+        sxru = (iY + 0.5) - (iHeight * 0.5)
+        sx = scrx * scale + imagePosX
+        sy = sxru * scale + imagePosY
+
+        verts = []
+        for px, py in self.__quad(sx - 12.0, sy - 1.0,sx + 12.0, sy + 1.0):
+            verts.append(px * wf)
+            verts.append(py * hf)
+
+        for px, py in self.__quad(sx - 1.0, sy - 12.0,sx + 1.0, sy + 12.0):
+            verts.append(px * wf)
+            verts.append(py * hf)
+
+        data = struct.pack("<" + "f" * len(verts), *verts)
+
+        batch.updateDynamicBuffer(self.__vbuffer, 0, len(data), data)
 
 
 class OFnUIView(QtGui.QWindow):
+    aimPositionChanged = QtCore.Signal()
+
     def __init__(self):
         super(OFnUIView, self).__init__()
         # TODO : other platform
@@ -340,10 +455,14 @@ class OFnUIView(QtGui.QWindow):
         self.__hardware = OFnUIHardwareResources(self, rhi_impl)
         self.__tex_shader = OFnUITextureShader(self.__hardware)
         self.__vertices = OFnUIGeometry(self.__hardware)
+        self.__aim = OFnUIAimGeometry(self.__hardware)
+        self.__aim_shader = OFnUIAimShader(self.__hardware)
         self.__scale = 1.0
         self.__move_anchor = None
         self.__img_pos = QtCore.QPointF(0, 0)
         self.__geom_dirty = True
+        self.__aim_pixel = None
+        self.__aim_move = False
 
         self.timer = QtCore.QTimer(self)
         self.timer.timeout.connect(self.render)
@@ -360,7 +479,7 @@ class OFnUIView(QtGui.QWindow):
 
     def resizeEvent(self, event):
         self.__geom_dirty = True
-    
+
     def wheelEvent(self, event):
         delta = 0
         if event.source() == QtCore.Qt.MouseEventSynthesizedBySystem:
@@ -388,21 +507,88 @@ class OFnUIView(QtGui.QWindow):
         self.__scale = new_scale
         self.__geom_dirty = True
 
+    def getAimPixel(self):
+        if self.__aim_pixel:
+            colors = self.__tex_shader.getPixelValues(*self.__aim_pixel)
+        else:
+            colors = [(0, 0, 0, 0)] * 25
+
+        return (self.__aim_pixel, colors)
+
+    def __checkAim(self):
+        if self.__aim_pixel:
+            iWidth, iHeight = self.__tex_shader.imageSize()
+            if iWidth <= 0 or iHeight <= 0:
+                self.__aim_pixel = None
+                return
+
+            nx = int(min(max(0, int(self.__aim_pixel[0])), iWidth - 1))
+            ny = int(min(max(0, int(self.__aim_pixel[1])), iHeight - 1))
+
+            if nx != self.__aim_pixel[0] or ny != self.__aim_pixel[1]:
+                self.__aim_pixel = (nx, ny)
+                self.aimPositionChanged.emit()
+
+    def __setAim(self, pos):
+        pixelWidth, pixelHeight = self.__hardware.pixelSize()
+        if pixelWidth <= 0 or pixelHeight <= 0:
+            return
+
+        iWidth, iHeight = self.__tex_shader.imageSize()
+        if iWidth <= 0 or iHeight <= 0:
+            return
+
+        dpos = pos * self.devicePixelRatio()
+        sx = dpos.x() - (pixelWidth * 0.5)
+        sy = dpos.y() - (pixelHeight * 0.5)
+
+        x0 = (iWidth * -0.5) * self.__scale + self.__img_pos.x()
+        y0 = (iHeight * -0.5) * self.__scale + self.__img_pos.y()
+
+        u = (sx - x0) / max(1e-12, (iWidth * self.__scale))
+        v = (sy - y0) / max(1e-12, (iHeight * self.__scale))
+
+        ix = u * iWidth
+        iy = v * iHeight
+
+        self.__aim_pixel = (
+            int(min(max(0, int(ix)), iWidth - 1)),
+            int(min(max(0, int(iy)), iHeight - 1))
+        )
+
+        self.__geom_dirty = True
+        self.aimPositionChanged.emit()
+
     def mousePressEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:
-            self.__move_anchor = event.position()
+            pos = event.position()
+
+            if event.modifiers() & QtCore.Qt.ControlModifier:
+                self.__aim_move = True
+                self.__aim_pixel = None
+                self.__setAim(pos)
+
+            else:
+                self.__move_anchor = pos
 
     def mouseReleaseEvent(self, event):
+        self.__aim_move = False
         self.__move_anchor = None
 
     def mouseMoveEvent(self, event):
-        if self.__move_anchor is not None:
+        if self.__aim_move:
+            self.__setAim(event.position())
+
+        elif self.__move_anchor is not None:
             self.__img_pos += event.position() - self.__move_anchor
             self.__move_anchor = event.position()
             self.__geom_dirty = True
 
-    def __updateGeometry(self):
-        self.__vertices.updateGeometry(*(self.__hardware.pixelSize()), *(self.__tex_shader.imageSize()), self.__img_pos.x(), self.__img_pos.y(), self.__scale)
+    def __updateGeometry(self, batch):
+        self.__vertices.updateGeometry(batch, *(self.__hardware.pixelSize()), *(self.__tex_shader.imageSize()), self.__img_pos.x(), self.__img_pos.y(), self.__scale)
+
+    def __updateAim(self, batch):
+        self.__aim.updateGeometry(batch, *self.__aim_pixel, *(self.__hardware.pixelSize()), *(self.__tex_shader.imageSize()), self.__img_pos.x(), self.__img_pos.y(), self.__scale)
 
     def render(self):
         if self.__wait:
@@ -416,6 +602,7 @@ class OFnUIView(QtGui.QWindow):
 
         tex_dirty = self.__tex_shader.isDirty()
         if tex_dirty:
+            self.__checkAim()
             self.__geom_dirty = True
 
         if not tex_dirty and not self.__geom_dirty:
@@ -424,20 +611,18 @@ class OFnUIView(QtGui.QWindow):
         if self.__hardware.beginFrame() != QtGui.QRhi.FrameOpSuccess:
             return
 
+        batch = self.__hardware.rhi().nextResourceUpdateBatch()
+        if tex_dirty:
+            self.__tex_shader.updateTexture(batch)
+
         if self.__geom_dirty:
-            self.__updateGeometry()
+            self.__updateGeometry(batch)
+
+            if self.__aim_pixel is not None:
+                self.__updateAim(batch)
 
         cbuffer = self.__hardware.cbuffer()
         rtarget = self.__hardware.rtarget()
-
-        batch = None
-        batch = self.__tex_shader.popBatch()
-        gbatch = self.__vertices.popBatch()
-        if batch is not None:
-            if gbatch is not None:
-                batch.merge(gbatch)
-        else:
-            batch = gbatch
 
         cbuffer.beginPass(rtarget,
             QtGui.QColor.fromRgbF(
@@ -456,8 +641,13 @@ class OFnUIView(QtGui.QWindow):
 
         self.__tex_shader.acceptCommandBuffer(cbuffer)
         self.__vertices.acceptCommandBuffer(cbuffer)
-
         cbuffer.draw(6)
+
+        if self.__aim_pixel is not None:
+            self.__aim_shader.acceptCommandBuffer(cbuffer)
+            self.__aim.acceptCommandBuffer(cbuffer)
+            cbuffer.draw(12)
+
         cbuffer.endPass()
 
         self.__hardware.endFrame()
@@ -482,25 +672,147 @@ class OFnUIView(QtGui.QWindow):
             self.fit()
 
 
+class OFnUIFormatSwitcher(QtWidgets.QComboBox):
+    formatChanged = QtCore.Signal(QtGui.QRhiSwapChain.Format)
+
+    def __init__(self, parent=None):
+        super(OFnUIFormatSwitcher, self).__init__(parent=parent)
+        self.addItems(["SDR", "HDR10"])
+        self.setMaximumWidth(100)
+        self.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.currentIndexChanged.connect(self.__formatChanged)
+
+    def __formatChanged(self, *args):
+        self.formatChanged.emit(QtGui.QRhiSwapChain.Format.HDR10 if self.currentText() == "HDR10" else QtGui.QRhiSwapChain.Format.SDR)
+
+
 class OFnUIViewport(QtWidgets.QWidget):
+    aimPositionChanged = QtCore.Signal()
+
     def __init__(self, parent=None):
         super(OFnUIViewport, self).__init__(parent=parent)
-        self.__viewer = OFnUIView()
+        self.__view = OFnUIView()
         self.setMinimumWidth(300)
         self.setMinimumHeight(300)
         layout = QtWidgets.QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        self.__format_selector = QtWidgets.QComboBox(parent=self)
-        self.__format_selector.addItems(["SDR", "HDR10"])
-        self.__format_selector.setMaximumWidth(100)
-        layout.addWidget(QtWidgets.QWidget.createWindowContainer(self.__viewer))
-        layout.addWidget(self.__format_selector)
+        layout.addWidget(QtWidgets.QWidget.createWindowContainer(self.__view))
 
-        self.__format_selector.setFocusPolicy(QtCore.Qt.NoFocus)
-        self.__format_selector.currentIndexChanged.connect(self.__formatChanged)
-
-    def __formatChanged(self, *args):
-        self.__viewer.setFormat(QtGui.QRhiSwapChain.Format.HDR10 if self.__format_selector.currentText() == "HDR10" else QtGui.QRhiSwapChain.Format.SDR)
+        self.__view.aimPositionChanged.connect(self.aimPositionChanged)
 
     def fit(self):
-        self.__viewer.fit()
+        self.__view.fit()
+
+    def setFormat(self, format):
+        self.__view.setFormat(format)
+
+    def getAimPixel(self):
+        return self.__view.getAimPixel()
+
+
+class OFnUIPixelDraw(QtWidgets.QWidget):
+    def __init__(self, parent=None):
+        super(OFnUIPixelDraw, self).__init__(parent=parent)
+        self.setFixedSize(150, 150)
+        self.__default_colors = [QtGui.QColor.fromRgbF(0.42, 0.42, 0.42)] * 25
+        self.__colors = self.__default_colors[:]
+
+    def setColors(self, colors):
+        self.__colors = [QtGui.QColor.fromRgbF(*x) for x in colors]
+
+    def reset(self):
+        self.__colors = self.__default_colors[:]
+
+    def paintEvent(self, event):
+        painter = QtGui.QPainter(self)
+
+        for r in range(5):
+            for c in range(5):
+                x = c * 30
+                y = r * 30
+                painter.fillRect(x, y, 30, 30, self.__colors[r * 5 + c])
+
+        painter.end()
+
+
+class OFnUIPixelInspector(QtWidgets.QFrame):
+    def __init__(self, parent=None):
+        super(OFnUIPixelInspector, self).__init__(parent=parent)
+        layout = QtWidgets.QGridLayout(self)
+        self.__draw = OFnUIPixelDraw(parent=self)
+        self.__px = QtWidgets.QLabel("------", parent=self)
+        self.__py = QtWidgets.QLabel("------", parent=self)
+        self.__r = QtWidgets.QLabel("------", parent=self)
+        self.__g = QtWidgets.QLabel("------", parent=self)
+        self.__b = QtWidgets.QLabel("------", parent=self)
+        self.__a = QtWidgets.QLabel("------", parent=self)
+
+        layout.addWidget(QtWidgets.QLabel("Pixel Inspector", parent=self), 0, 0)
+        layout.addWidget(self.__draw, 1, 0)
+
+        sl = QtWidgets.QHBoxLayout()
+        sl.addWidget(QtWidgets.QLabel("X :", parent=self))
+        sl.addWidget(self.__px)
+        sl.addStretch(1)
+        layout.addLayout(sl, 2, 0)
+        sl = QtWidgets.QHBoxLayout()
+        sl.addWidget(QtWidgets.QLabel("Y :", parent=self))
+        sl.addWidget(self.__py)
+        sl.addStretch(1)
+        layout.addLayout(sl, 3, 0)
+        sl = QtWidgets.QHBoxLayout()
+        sl.addWidget(QtWidgets.QLabel("R :", parent=self))
+        sl.addWidget(self.__r)
+        sl.addStretch(1)
+        layout.addLayout(sl, 4, 0)
+        sl = QtWidgets.QHBoxLayout()
+        sl.addWidget(QtWidgets.QLabel("G :", parent=self))
+        sl.addWidget(self.__g)
+        sl.addStretch(1)
+        layout.addLayout(sl, 5, 0)
+        sl = QtWidgets.QHBoxLayout()
+        sl.addWidget(QtWidgets.QLabel("B :", parent=self))
+        sl.addWidget(self.__b)
+        sl.addStretch(1)
+        layout.addLayout(sl, 6, 0)
+        sl = QtWidgets.QHBoxLayout()
+        sl.addWidget(QtWidgets.QLabel("A :", parent=self))
+        sl.addWidget(self.__a)
+        sl.addStretch(1)
+        layout.addLayout(sl, 7, 0)
+
+    def setPixel(self, x, y, colors):
+        oncolor = [str(round(x, 4)) for x in colors[12]]
+        self.__px.setText(str(x))
+        self.__py.setText(str(y))
+        self.__r.setText(oncolor[0])
+        self.__g.setText(oncolor[1])
+        self.__b.setText(oncolor[2])
+        self.__a.setText(oncolor[3])
+        self.__draw.setColors(colors)
+        self.__draw.update()
+
+    def reset(self):
+        self.__px.setText("------")
+        self.__py.setText("------")
+        self.__r.setText("------")
+        self.__g.setText("------")
+        self.__b.setText("------")
+        self.__draw.reset()
+
+
+class OFnUIViewportSettings(QtWidgets.QWidget):
+    formatChanged = QtCore.Signal(QtGui.QRhiSwapChain.Format)
+
+    def __init__(self, parent=None):
+        super(OFnUIViewportSettings, self).__init__(parent=parent)
+        layout = QtWidgets.QVBoxLayout(self)
+        self.__format_switcher = OFnUIFormatSwitcher(parent=self)
+        self.__inspector = OFnUIPixelInspector(parent=self)
+        layout.addWidget(self.__format_switcher)
+        layout.addWidget(self.__inspector)
+        layout.addStretch(1)
+        self.__format_switcher.formatChanged.connect(self.formatChanged.emit)
+
+    def setPixel(self, x, y, colors):
+        self.__inspector.setPixel(x, y, colors)
