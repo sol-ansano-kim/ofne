@@ -1,7 +1,8 @@
 # OFNE
 
 ## TODO
-error control clean up?, ocio colorspace from?
-packet viewer, python expression, pixel inspector
+ExponentWithLinearTransform, AllocationTransform, FileTransform, MatrixTransform, LogCameraTransform
 
-shift selection, group
+menu hot keys, aim on draw
+
+shift selection, group, packet viewer

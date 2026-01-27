@@ -12,15 +12,22 @@ class OFnUIMain(QtWidgets.QMainWindow):
         central_layout = QtWidgets.QVBoxLayout(central)
         self.setCentralWidget(central)
 
-        self.__vert_splitter = QtWidgets.QSplitter(QtCore.Qt.Vertical)
+        self.__main_splitter = QtWidgets.QSplitter(QtCore.Qt.Vertical)
+        self.__top_splitter = QtWidgets.QSplitter(QtCore.Qt.Horizontal)
         self.__bottom_splitter = QtWidgets.QSplitter(QtCore.Qt.Horizontal)
-        central_layout.addWidget(self.__vert_splitter)
+        central_layout.addWidget(self.__main_splitter)
+
+        self.__main_splitter.addWidget(self.__top_splitter)
+        self.__main_splitter.addWidget(self.__bottom_splitter)
+        self.__main_splitter.setStretchFactor(0, 1)
+        self.__main_splitter.setStretchFactor(1, 0)
 
         self.__viewport = viewport.OFnUIViewport(parent=self)
-        self.__vert_splitter.addWidget(self.__viewport)
-        self.__vert_splitter.addWidget(self.__bottom_splitter)
-        self.__vert_splitter.setStretchFactor(0, 1)
-        self.__vert_splitter.setStretchFactor(1, 0)
+        self.__viewport_settings = viewport.OFnUIViewportSettings(parent=self)
+        self.__top_splitter.addWidget(self.__viewport)
+        self.__top_splitter.addWidget(self.__viewport_settings)
+        self.__top_splitter.setStretchFactor(0, 1)
+        self.__top_splitter.setStretchFactor(1, 0)
 
         self.__graph = graph.OFnUINodeGraph(parent=self)
         self.__params = params.OFnUIParams(parent=self)
@@ -46,6 +53,8 @@ class OFnUIMain(QtWidgets.QMainWindow):
         self.__graph.nodeSelected.connect(self.__onNodeSelected)
         self.__params.nodeRenamed.connect(self.__onNodeRenamed)
         self.__params.paramChanged.connect(self.__graph.evaluate)
+        self.__viewport.aimPositionChanged.connect(self.__aimPositionChanged)
+        self.__viewport_settings.formatChanged.connect(self.__viewport.setFormat)
 
         # setup
         self.resize(800, 600)
@@ -61,6 +70,10 @@ class OFnUIMain(QtWidgets.QMainWindow):
             self.__save_action.setEnabled(False)
 
         self.setWindowTitle(title)
+
+    def __aimPositionChanged(self):
+        pos, colors = self.__viewport.getAimPixel()
+        self.__viewport_settings.setPixel(*pos, colors)
 
     def __onNodeSelected(self, node):
         self.__params.setNode(node)

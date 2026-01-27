@@ -201,9 +201,12 @@ class OFnUIViewResource(object):
     def __init__(self):
         super(OFnUIViewResource, self).__init__()
         self.__empty_image = QtGui.QImage(640, 640, QtGui.QImage.Format_RGBA32FPx4)
+        self.__empty_arr = np.zeros((640, 640, 4), dtype=np.float32)
+        self.__empty_arr[..., 3] = 1.0
         self.__empty_image.fill(QtGui.QColor(0, 0, 0))
         self.__latest_stamp = None
         self.__image = self.__empty_image
+        self.__arr = self.__empty_arr
 
     def isDirty(self):
         stamp = resource.OFnViewResource().stamp()
@@ -217,6 +220,22 @@ class OFnUIViewResource(object):
 
     def image(self):
         return self.__image
+
+    def getPixelValues(self, x, y):
+        colors = []
+
+        shape = self.__arr.shape
+        for dy in (-2, -1, 0, 1, 2):
+            for dx in (-2, -1, 0, 1, 2):
+                yy = y + dy
+                xx = x + dx
+
+                if yy < 0 or yy >= shape[0] or xx < 0 or xx >= shape[1]:
+                    colors.append((0, 0, 0, 1))
+                else:
+                    colors.append(tuple([float(x) for x in self.__arr[yy, xx]]))
+
+        return colors
 
     def __readResource(self):
         packet = resource.OFnViewResource().packet()
@@ -244,7 +263,10 @@ class OFnUIViewResource(object):
 
             if rgba is not None:
                 self.__image = QtGui.QImage(rgba.data, w, h, rgba.strides[0], QtGui.QImage.Format.Format_RGBA32FPx4)
+                self.__arr = rgba
             else:
                 self.__image = self.__empty_image
+                self.__arr = self.__empty_arr
         else:
             self.__image = self.__empty_image
+            self.__arr = self.__empty_arr
