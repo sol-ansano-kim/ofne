@@ -330,8 +330,6 @@ class OFnUIGeometry(object):
 class OFnUIView(QtGui.QWindow):
     def __init__(self):
         super(OFnUIView, self).__init__()
-        self.__test_switch = False
-
         # TODO : other platform
         rhi_impl = QtGui.QRhi.D3D11
         if sys.platform == "darwin":
@@ -362,7 +360,7 @@ class OFnUIView(QtGui.QWindow):
 
     def resizeEvent(self, event):
         self.__geom_dirty = True
-
+    
     def wheelEvent(self, event):
         delta = 0
         if event.source() == QtCore.Qt.MouseEventSynthesizedBySystem:
@@ -373,11 +371,21 @@ class OFnUIView(QtGui.QWindow):
         if delta == 0:
             return
 
-        if delta > 0:
-            self.__scale *= 1.05
-        else:
-            self.__scale *= 0.95
+        pixelWidth, pixelHeight = self.__hardware.pixelSize()
+        if pixelWidth <= 0 or pixelHeight <= 0:
+            return
 
+        old_scale = self.__scale
+        if delta > 0:
+            new_scale = old_scale * 1.1
+        else:
+            new_scale = old_scale * 0.9
+
+        new_scale = max(0.02, min(1000.0, new_scale))
+        dpos = event.position() * self.devicePixelRatio()
+        spos = QtCore.QPointF(dpos.x() - (pixelWidth * 0.5), dpos.y() - (pixelHeight * 0.5))
+        self.__img_pos = spos - (spos - self.__img_pos) * (new_scale / max(1e-12, old_scale))
+        self.__scale = new_scale
         self.__geom_dirty = True
 
     def mousePressEvent(self, event):
@@ -466,6 +474,7 @@ class OFnUIView(QtGui.QWindow):
             iw = max(2, iw - 2)
             self.__scale = ww / iw
 
+        self.__img_pos = QtCore.QPointF()
         self.__geom_dirty = True
 
     def keyPressEvent(self, event):
@@ -486,6 +495,8 @@ class OFnUIViewport(QtWidgets.QWidget):
         self.__format_selector.setMaximumWidth(100)
         layout.addWidget(QtWidgets.QWidget.createWindowContainer(self.__viewer))
         layout.addWidget(self.__format_selector)
+
+        self.__format_selector.setFocusPolicy(QtCore.Qt.NoFocus)
         self.__format_selector.currentIndexChanged.connect(self.__formatChanged)
 
     def __formatChanged(self, *args):
