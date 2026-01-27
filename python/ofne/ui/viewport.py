@@ -614,6 +614,7 @@ class OFnUIView(QtGui.QWindow):
         batch = self.__hardware.rhi().nextResourceUpdateBatch()
         if tex_dirty:
             self.__tex_shader.updateTexture(batch)
+            self.aimPositionChanged.emit()
 
         if self.__geom_dirty:
             self.__updateGeometry(batch)
@@ -718,7 +719,7 @@ class OFnUIPixelDraw(QtWidgets.QWidget):
         self.__colors = self.__default_colors[:]
 
     def setColors(self, colors):
-        self.__colors = [QtGui.QColor.fromRgbF(*x) for x in colors]
+        self.__colors = [QtGui.QColor.fromRgbF(*x[:3], min(1.0, x[3])) for x in colors]
 
     def reset(self):
         self.__colors = self.__default_colors[:]
@@ -820,3 +821,6 @@ class OFnUIViewportSettings(QtWidgets.QWidget):
 
     def setPixel(self, x, y, colors):
         self.__inspector.setPixel(x, y, colors)
+
+    def resetInspector(self):
+        self.__inspector.reset()
