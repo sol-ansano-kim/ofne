@@ -20,6 +20,15 @@ ROLES = {
     "role:texture_paint": ocio.ROLE_TEXTURE_PAINT
 }
 
+INTERP_MAP = {
+    "best": ocio.INTERP_BEST,
+    "cubic": ocio.INTERP_CUBIC,
+    "default": ocio.INTERP_DEFAULT,
+    "linear": ocio.INTERP_LINEAR,
+    "nearest": ocio.INTERP_NEAREST,
+    "tetrahedral": ocio.INTERP_TETRAHEDRAL
+}
+
 BUILTIN_TRANSFORMS = [x[0] for x in ocio.BuiltinTransformRegistry().getBuiltins()]
 
 
@@ -49,9 +58,165 @@ def _getColorSpaceName(config, inpt):
     return inpt
 
 
+class OCIOAllocationUniformTransform(plugin.OFnOp):
+    def __init__(self):
+        super(OCIOAllocationUniformTransform, self).__init__()
+
+    def params(self):
+        return [
+            plugin.OFnParamFloat("min", 0.0),
+            plugin.OFnParamFloat("max", 1.0),
+            plugin.OFnParamBool("inverse", False)
+        ]
+
+    def needs(self):
+        return 1
+
+    def packetable(self):
+        return True
+
+    def operate(self, params, packetArray):
+        d = packetArray.packet(0).data()
+
+        if not _validPacketData(d):
+            return plugin.OFnPacket()
+
+        direction = ocio.TRANSFORM_DIR_INVERSE if params.get("inverse") else ocio.TRANSFORM_DIR_FORWARD
+        proc = RAW_CONFIG.getProcessor(
+            ocio.AllocationTransform(
+                ocio.ALLOCATION_UNIFORM,
+                vars=[
+                    params.get("min"),
+                    params.get("max")
+                ],
+                direction=direction
+            )
+        ).getDefaultCPUProcessor()
+
+        func = proc.applyRGB if d.shape[2] == 3 else proc.applyRGBA
+        func(d)
+
+        return plugin.OFnPacket(data=d)
+
+
+class OCIOAllocationLog2Transform(plugin.OFnOp):
+    def __init__(self):
+        super(OCIOAllocationLog2Transform, self).__init__()
+
+    def params(self):
+        return [
+            plugin.OFnParamFloat("min", 0.0),
+            plugin.OFnParamFloat("max", 1.0),
+            plugin.OFnParamFloat("offset", 0.0),
+            plugin.OFnParamBool("inverse", False)
+        ]
+
+    def needs(self):
+        return 1
+
+    def packetable(self):
+        return True
+
+    def operate(self, params, packetArray):
+        d = packetArray.packet(0).data()
+
+        if not _validPacketData(d):
+            return plugin.OFnPacket()
+
+        direction = ocio.TRANSFORM_DIR_INVERSE if params.get("inverse") else ocio.TRANSFORM_DIR_FORWARD
+        proc = RAW_CONFIG.getProcessor(
+            ocio.AllocationTransform(
+                ocio.ALLOCATION_LG2,
+                vars=[
+                    params.get("min"),
+                    params.get("max"),
+                    params.get("offset")
+                ],
+                direction=direction
+            )
+        ).getDefaultCPUProcessor()
+
+        func = proc.applyRGB if d.shape[2] == 3 else proc.applyRGBA
+        func(d)
+
+        return plugin.OFnPacket(data=d)
+
+
+class OCIOFileTransform(plugin.OFnOp):
+    def __init__(self):
+        super(OCIOFileTransform, self).__init__()
+
+    def params(self):
+        return [
+            plugin.OFnParamStr("src", ""),
+            plugin.OFnParamStr("cccId", ""),
+            plugin.OFnParamStr("interpolation", "linear", valueList=list(INTERP_MAP.keys()), enforceValueList=True),
+            plugin.OFnParamBool("inverse", False)
+        ]
+
+    def needs(self):
+        return 1
+
+    def packetable(self):
+        return True
+
+    def operate(self, params, packetArray):
+        d = packetArray.packet(0).data()
+
+        if not _validPacketData(d):
+            return plugin.OFnPacket()
+
+        direction = ocio.TRANSFORM_DIR_INVERSE if params.get("inverse") else ocio.TRANSFORM_DIR_FORWARD
+        proc = RAW_CONFIG.getProcessor(
+            ocio.FileTransform(
+                src=params.get("src"),
+                cccId=params.get("cccId"),
+                interpolation=INTERP_MAP[params.get("interpolation")],
+                direction=direction
+            )
+        ).getDefaultCPUProcessor()
+
+        func = proc.applyRGB if d.shape[2] == 3 else proc.applyRGBA
+        func(d)
+
+        return plugin.OFnPacket(data=d)
+
+
 class OCIOExponentTransform(plugin.OFnOp):
     def __init__(self):
         super(OCIOExponentTransform, self).__init__()
+
+    def params(self):
+        return [
+            plugin.OFnParamFloat("gamma", 1.0),
+            plugin.OFnParamBool("inverse", False)
+        ]
+
+    def needs(self):
+        return 1
+
+    def packetable(self):
+        return True
+
+    def operate(self, params, packetArray):
+        d = packetArray.packet(0).data()
+
+        if not _validPacketData(d):
+            return plugin.OFnPacket()
+
+        gamma = params.get("gamma")
+        direction = ocio.TRANSFORM_DIR_INVERSE if params.get("inverse") else ocio.TRANSFORM_DIR_FORWARD
+        proc = RAW_CONFIG.getProcessor(ocio.ExponentTransform(value=[gamma, gamma, gamma, 1.0], negativeStyle=ocio.NEGATIVE_CLAMP, direction=direction)).getDefaultCPUProcessor()
+
+        func = proc.applyRGB if d.shape[2] == 3 else proc.applyRGBA
+        func(d)
+
+        return plugin.OFnPacket(data=d)
+
+
+class OCIOExponentWithLinearTransform(plugin.OFnOp):
+    def __init__(self):
+        super(OCIOExponentWithLinearTransform, self).__init__()
 
     def params(self):
         return [
