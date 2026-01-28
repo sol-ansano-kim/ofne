@@ -688,7 +688,7 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
             self.scale(0.95, 0.95)
 
     def mousePressEvent(self, event):
-        if event.button() == QtCore.Qt.MiddleButton or event.modifiers() == QtCore.Qt.AltModifier:
+        if event.button() == QtCore.Qt.MiddleButton or (event.modifiers() == QtCore.Qt.AltModifier and event.button() == QtCore.Qt.LeftButton):
             QtGui.QGuiApplication.setOverrideCursor(QtCore.Qt.OpenHandCursor)
             self.__move_scene = True
             self.__old_scene_pos = event.pos()
