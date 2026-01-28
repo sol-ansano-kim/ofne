@@ -384,11 +384,8 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
 
         self.__op_selector.OpSelected.connect(self.__onOpCreateRequested)
         self.graphChanged.connect(self.evaluate)
-
-        pal = self.palette()
-        pal.setColor(QtGui.QPalette.Window, QtGui.QColor(25, 25, 25))
-        pal.setColor(QtGui.QPalette.Text, QtGui.QColor(220, 220, 220))
-        self.setPalette(pal)
+        self.setBackgroundBrush(QtGui.QBrush(QtGui.QColor(25, 25, 25)))
+        self.setCacheMode(QtWidgets.QGraphicsView.CacheBackground)
         self.setTransformationAnchor(QtWidgets.QGraphicsView.AnchorUnderMouse)
         self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
