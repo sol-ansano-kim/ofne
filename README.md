@@ -1,6 +1,7 @@
 # OFNE
 
-![example](https://github.com/user-attachments/assets/ae2bcd41-3054-4103-a4dd-2cb5d0e14421)
+![demo](https://github.com/user-attachments/assets/7393e76a-30c6-41bd-916f-263a291475ab)
+
 
 ## Viewport Controls
 - F: Fit the viewport to the image
