@@ -87,6 +87,7 @@ class OFnUIMain(QtWidgets.QMainWindow):
     def __new(self):
         self.__graph.newScene()
         self.__save_action.setEnabled(False)
+        self.__setTitle(None)
 
     def __save(self):
         self.__graph.save()
