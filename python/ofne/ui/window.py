@@ -1,5 +1,6 @@
 from PySide6 import QtWidgets
 from PySide6 import QtCore
+from PySide6 import QtGui
 from . import graph
 from . import params
 from . import viewport
@@ -38,10 +39,10 @@ class OFnUIMain(QtWidgets.QMainWindow):
 
         # menu
         file_menu = self.menuBar().addMenu("File")
-        new_action = file_menu.addAction("New")
-        open_action = file_menu.addAction("Open")
-        self.__save_action = file_menu.addAction("Save")
-        save_as_action = file_menu.addAction("SaveAs")
+        new_action = file_menu.addAction("New", QtGui.QKeySequence.New)
+        open_action = file_menu.addAction("Open", QtGui.QKeySequence.Open)
+        self.__save_action = file_menu.addAction("Save", QtGui.QKeySequence.Save)
+        save_as_action = file_menu.addAction("SaveAs", QtGui.QKeySequence.SaveAs)
         self.__save_action.setEnabled(False)
 
         # signal
