@@ -58,6 +58,87 @@ def _getColorSpaceName(config, inpt):
     return inpt
 
 
+class OCIOMatrixTransform(plugin.OFnOp):
+    def __init__(self):
+        super(OCIOMatrixTransform, self).__init__()
+
+    def params(self):
+        return [
+            plugin.OFnParamFloat("m00", default=1.0),
+            plugin.OFnParamFloat("m01", default=0.0),
+            plugin.OFnParamFloat("m02", default=0.0),
+            plugin.OFnParamFloat("m03", default=0.0),
+            plugin.OFnParamFloat("m10", default=0.0),
+            plugin.OFnParamFloat("m11", default=1.0),
+            plugin.OFnParamFloat("m12", default=0.0),
+            plugin.OFnParamFloat("m13", default=0.0),
+            plugin.OFnParamFloat("m20", default=0.0),
+            plugin.OFnParamFloat("m21", default=0.0),
+            plugin.OFnParamFloat("m22", default=1.0),
+            plugin.OFnParamFloat("m23", default=0.0),
+            plugin.OFnParamFloat("m30", default=0.0),
+            plugin.OFnParamFloat("m31", default=0.0),
+            plugin.OFnParamFloat("m32", default=0.0),
+            plugin.OFnParamFloat("m33", default=1.0),
+            plugin.OFnParamFloat("offset0", default=0.0),
+            plugin.OFnParamFloat("offset1", default=0.0),
+            plugin.OFnParamFloat("offset2", default=0.0),
+            plugin.OFnParamFloat("offset3", default=0.0),
+            plugin.OFnParamBool("inverse", False)
+        ]
+
+    def needs(self):
+        return 1
+
+    def packetable(self):
+        return True
+
+    def operate(self, params, packetArray):
+        d = packetArray.packet(0).data()
+
+        if not _validPacketData(d):
+            return plugin.OFnPacket()
+
+        matrix = [
+            params.get("m00"),
+            params.get("m01"),
+            params.get("m02"),
+            params.get("m03"),
+            params.get("m10"),
+            params.get("m11"),
+            params.get("m12"),
+            params.get("m13"),
+            params.get("m20"),
+            params.get("m21"),
+            params.get("m22"),
+            params.get("m23"),
+            params.get("m30"),
+            params.get("m31"),
+            params.get("m32"),
+            params.get("m33")
+        ]
+        offset = [
+            params.get("offset0"),
+            params.get("offset1"),
+            params.get("offset2"),
+            params.get("offset3")
+        ]
+
+        direction = ocio.TRANSFORM_DIR_INVERSE if params.get("inverse") else ocio.TRANSFORM_DIR_FORWARD
+        proc = RAW_CONFIG.getProcessor(
+            ocio.MatrixTransform(
+                matrix=matrix,
+                offset=offset,
+                direction=direction
+            )
+        ).getDefaultCPUProcessor()
+
+        func = proc.applyRGB if d.shape[2] == 3 else proc.applyRGBA
+        func(d)
+
+        return plugin.OFnPacket(data=d)
+
+
 class OCIOAllocationUniformTransform(plugin.OFnOp):
     def __init__(self):
         super(OCIOAllocationUniformTransform, self).__init__()
