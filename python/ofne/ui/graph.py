@@ -393,6 +393,7 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.setMouseTracking(True)
         self.setDragMode(QtWidgets.QGraphicsView.RubberBandDrag)
+        self.setAcceptDrops(True)
 
         self.newScene()
         self.verticalScrollBar().setValue(5000)
@@ -760,3 +761,40 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
                     self.__scene.connect(src.node(), dst.node(), dst.index())
 
         super(OFnUINodeGraph, self).mouseReleaseEvent(event)
+
+    def __acceptableDD(self, event):
+        if event.mimeData().hasFormat("text/uri-list") and event.mimeData().hasUrls():
+            files = [x for x in event.mimeData().urls() if x.toLocalFile()]
+            if files:
+                return True
+
+        return False
+
+    def dragEnterEvent(self, event):
+        if self.__acceptableDD(event):
+            event.acceptProposedAction()
+        else:
+            super(OFnUINodeGraph, self).dragEnterEvent(event)
+
+    def dragMoveEvent(self, event):
+        if self.__acceptableDD(event):
+            event.acceptProposedAction()
+        else:
+            super(OFnUINodeGraph, self).dragMoveEvent(event)
+
+    def dropEvent(self, event):
+        files = [x.toLocalFile() for x in event.mimeData().urls()]
+        if files:
+            offset = 0
+            cpos = self.mapToScene(event.position().toPoint())
+            for f in files:
+                if not f:
+                    continue
+
+                # TODO : hmm..
+                self.__scene.createNode("ReadImage", paramDict={"path": f}, userData={"ui:pos": (cpos.x() + offset * 20, cpos.y() + offset * 20)})
+                offset += 1
+
+            event.acceptProposedAction()
+        else:
+            super(OFnUINodeGraph, self).dropEvent(event)
