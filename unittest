@@ -1,5 +1,0 @@
-#!/bin/sh
-
-_dirn=$(dirname $0)
-python3 -m unittest discover -s ${_dirn}/tests
-echo ${_dirn}/tests
