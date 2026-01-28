@@ -562,10 +562,10 @@ class OFnUIView(QtGui.QWindow):
     def mousePressEvent(self, event):
         pos = event.position()
 
-        if event.button() == QtCore.Qt.MiddleButton or event.modifiers() == QtCore.Qt.AltModifier:
+        if event.button() == QtCore.Qt.MiddleButton or (event.modifiers() == QtCore.Qt.AltModifier and event.button() == QtCore.Qt.LeftButton):
             self.__move_anchor = pos
 
-        elif event.button() == QtCore.Qt.LeftButton:
+        elif event.button() == QtCore.Qt.LeftButton and event.modifiers() == QtCore.Qt.ControlModifier:
             self.__aim_move = True
             self.__aim_pixel = None
             self.__setAim(pos)
