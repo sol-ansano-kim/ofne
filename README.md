@@ -18,6 +18,7 @@
 - V: Connect the selected node to the Viewer
 - Middle Click or Alt + Left Click: Pan the graph
 - Mouse Wheel: Zoom in/out
+- Drag & Drop an image file: Create a ReadImage node
 
 ## Requires
 numpy
