@@ -5,7 +5,7 @@
 
 ## Viewport Controls
 - F: Fit the viewport to the image
-- Left Click: Place a Pixel Inspector
+- Ctrl + Left Click: Place a Pixel Inspector
 - Middle Click or Alt + Left Click: Pan the viewport
 - Mouse Wheel: Zoom in/out
 
