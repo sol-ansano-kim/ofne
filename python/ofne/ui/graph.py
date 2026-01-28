@@ -22,6 +22,7 @@ class OFnUIOpSelector(QtWidgets.QLineEdit):
 
     def __init__(self, parent=None):
         super(OFnUIOpSelector, self).__init__(parent=parent)
+        self.setMinimumWidth(200)
         oplist = set(op_manager.listOps())
         # TODO : hmm..
         if "Viewer" in oplist:
