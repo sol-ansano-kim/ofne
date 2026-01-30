@@ -32,4 +32,7 @@ PySide 6.7+
 
 ## TODO
 shift selection, group, packet viewer
-
+cmd, filepath
+scroll area,
+unicode?
+relative path, env var
