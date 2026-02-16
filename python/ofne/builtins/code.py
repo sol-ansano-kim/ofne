@@ -1,12 +1,22 @@
 import numpy
+import OpenImageIO
+import PyOpenColorIO
 from ofne import plugin
 
 
-DefaultPythonExpression = """# in_data = inPacket.data()
+DefaultPythonExpression = """# # Inputs
+# # inPackets : A container of input packets
+# # oiio : OpenImageIO library
+# # ocio : PyOpenColorIO library
+# # np : NumPy library
+# # Packet : Packet class
+# # Output
+# # outPacket: A Packet constructed from the processed result
+# in_data = inPackets.packet(0).data()
 # in_shape = in_data.shape
-# random_data = numpy.random.rand(in_shape[0], in_shape[1], in_shape[2]).astype(numpy.float32)
+# random_data = np.random.rand(in_shape[0], in_shape[1], in_shape[2]).astype(np.float32)
 # outPacket = Packet(data=in_data + random_data)
-outPacket = inPacket
+outPacket = inPackets.packet(0)
 """
 
 
@@ -20,14 +30,14 @@ class PythonExpression(plugin.OFnOp):
         ]
 
     def needs(self):
-        return 1
+        return 4
 
     def packetable(self):
         return True
 
-    def _eval(self, expression, inPacket):
-        eval_local = {"inPacket": inPacket, "Packet": plugin.OFnPacket}
-        eval_global = {"numpy": numpy}
+    def _eval(self, expression, inPackets):
+        eval_local = {"inPackets": inPackets, "Packet": plugin.OFnPacket}
+        eval_global = {"np": numpy, "oiio": OpenImageIO, "ocio": PyOpenColorIO}
 
         exec(expression, eval_global, eval_local)
 
@@ -43,7 +53,7 @@ class PythonExpression(plugin.OFnOp):
         if not exp:
             return plugin.OFnPacket()
 
-        op = self._eval(exp, packetArray.packet(0))
+        op = self._eval(exp, packetArray)
         if op:
             return op
         else:
