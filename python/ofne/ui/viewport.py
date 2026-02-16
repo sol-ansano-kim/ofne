@@ -565,6 +565,12 @@ class OFnUIView(QtGui.QWindow):
         if event.button() == QtCore.Qt.MiddleButton or (event.modifiers() == QtCore.Qt.AltModifier and event.button() == QtCore.Qt.LeftButton):
             self.__move_anchor = pos
 
+        elif event.button() == QtCore.Qt.RightButton and event.modifiers() == QtCore.Qt.ControlModifier:
+            self.__aim_move = False
+            self.__aim_pixel = None
+            self.__geom_dirty = True
+            self.aimPositionChanged.emit()
+
         elif event.button() == QtCore.Qt.LeftButton and event.modifiers() == QtCore.Qt.ControlModifier:
             self.__aim_move = True
             self.__aim_pixel = None
@@ -802,6 +808,7 @@ class OFnUIPixelInspector(QtWidgets.QFrame):
         self.__r.setText("------")
         self.__g.setText("------")
         self.__b.setText("------")
+        self.__a.setText("------")
         self.__draw.reset()
 
 
