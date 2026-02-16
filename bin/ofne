@@ -1,16 +1,21 @@
+#!/usr/bin/env python3
+
 import os
 import sys
 from PySide6 import QtWidgets
 
 try:
-    import ofne.ui
+    import ofne.plugin
 except:
-    sys.path.append(os.path.abspath(os.path.join(__file__, "../../..")))
-    import ofne.ui
+    sys.path.append(os.path.abspath(os.path.join(__file__, "../../python")))
+    import ofne.plugin
 
 
 def main():
     app = QtWidgets.QApplication(sys.argv)
+
+    # TODO : parsing options
+    import ofne.ui
 
     win = ofne.ui.MainWindow()
     win.show()
