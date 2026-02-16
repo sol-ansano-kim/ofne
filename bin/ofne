@@ -2,7 +2,9 @@
 
 import os
 import sys
+import argparse
 from PySide6 import QtWidgets
+
 
 # TODO : parsing options
 try:
@@ -13,9 +15,12 @@ except:
 
 
 def main():
-    app = QtWidgets.QApplication(sys.argv)
+    parser = argparse.ArgumentParser("OFNE")
+    parser.add_argument("Scene", nargs="?", help="an ofsn file path to open")
+    opts = parser.parse_args()
 
-    win = ofne.ui.MainWindow()
+    app = QtWidgets.QApplication(sys.argv)
+    win = ofne.ui.MainWindow(scene=opts.Scene)
     win.show()
 
     sys.exit(app.exec())

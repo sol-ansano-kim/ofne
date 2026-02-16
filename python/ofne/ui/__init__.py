@@ -1,4 +1,4 @@
-def MainWindow(parent=None):
+def MainWindow(scene=None, parent=None):
     from . import window
 
-    return window.OFnUIMain(parent=parent)
+    return window.OFnUIMain(scenePath=scene, parent=parent)

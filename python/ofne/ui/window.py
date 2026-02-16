@@ -7,7 +7,7 @@ from . import viewport
 
 
 class OFnUIMain(QtWidgets.QMainWindow):
-    def __init__(self, parent=None):
+    def __init__(self, scenePath=None, parent=None):
         super(OFnUIMain, self).__init__(parent=parent)
         central = QtWidgets.QWidget(self)
         central_layout = QtWidgets.QVBoxLayout(central)
@@ -60,6 +60,9 @@ class OFnUIMain(QtWidgets.QMainWindow):
         # setup
         self.resize(800, 600)
         self.__setTitle(None)
+
+        if scenePath:
+            self.__graph.open(scenePath)
 
     def __setTitle(self, filepath):
         title = "OFNE"
