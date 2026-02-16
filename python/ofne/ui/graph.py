@@ -303,6 +303,82 @@ class OFnUINodeItem(QtCore.QObject, QtWidgets.QGraphicsItemGroup):
         return self.__node
 
 
+class OFnUINoteBody(QtWidgets.QGraphicsPathItem):
+    def __init__(self, parent=None):
+        super(OFnUINoteBody, self).__init__(parent=parent)
+        self.__brush = QtGui.QBrush(QtGui.QColor(51, 120, 58, 125), QtCore.Qt.SolidPattern)
+        self.__normal_pen = QtGui.QPen(QtGui.QColor(81, 160, 79))
+        self.__selected_pen = QtGui.QPen(QtGui.QColor(81, 160, 79))
+        self.__normal_pen.setWidth(4)
+        self.__selected_pen.setWidth(6)
+        self.__width = 100
+        self.__height = 100
+        self.setBrush(self.__brush)
+
+        path = QtGui.QPainterPath()
+        path.addRoundedRect(0, 0, self.__width, self.__height, 5, 5)
+        self.setPath(path)
+        self.setPen(self.__normal_pen)
+
+    def height(self):
+        return self.__height
+
+    def setHeight(self, h):
+        self.__height = h
+
+    def width(self):
+        return self.__width
+
+    def setWidth(self, w):
+        self.__width = w
+
+    def paint(self, painter, option, widget):
+        pen = self.__normal_pen
+        if self.isSelected():
+            pen = self.__selected_pen
+
+        self.setPen(pen)
+        path = QtGui.QPainterPath()
+        path.addRoundedRect(0, 0, self.__width, self.__height, 5, 5)
+        self.setPath(path)
+
+        super(OFnUINoteBody, self).paint(painter, option, widget)
+
+
+class OFnUINoteText(QtWidgets.QGraphicsTextItem):
+    def __init__(self, parent=None):
+        super(OFnUINoteText, self).__init__(parent=parent)
+        f = self.font()
+        f.setPixelSize(15)
+        self.setFont(f)
+        self.setTextWidth(100)
+
+
+class OFnUINote(QtWidgets.QGraphicsItemGroup):
+    def __init__(self, parent=None):
+        super(OFnUINote, self).__init__(parent=parent)
+        self.setZValue(10)
+        self.setFlags(QtWidgets.QGraphicsRectItem.ItemIsMovable | QtWidgets.QGraphicsRectItem.ItemIsSelectable)
+
+        self.__body = OFnUINoteBody(parent=self)
+        self.addToGroup(self.__body)
+
+        self.__text = OFnUINoteText(parent=self)
+        self.addToGroup(self.__text)
+
+    def height(self):
+        return self.__body.height()
+
+    def setHeight(self, h):
+        self.__body.setHeight(h)
+
+    def width(self):
+        return self.__body.width()
+
+    def setWidth(self, w):
+        self.__body.setWidth(w)
+
+
 class OFnUIConnection(QtWidgets.QGraphicsPathItem):
     def __init__(self, src, dst, parent=None):
         super(OFnUIConnection, self).__init__(parent=parent)
@@ -650,6 +726,16 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
             cur = self.__viewer_node.node().inputs()[0]
             if not cur or cur.id() != nds[-1].node().id():
                 self.__scene.connect(nds[-1].node(), self.__viewer_node.node(), 0)
+
+    def __createNote(self, pos):
+        note = OFnUINote()
+        pos = self.mapToScene(self.mapFromGlobal(QtGui.QCursor.pos()))
+        px = pos.x() - note.boundingRect().width() * 0.5
+        py = pos.y() - note.boundingRect().height() * 0.5
+
+        note.setPos(px, py)
+        self.__graphic_scene.addItem(note)
+
 
     def fit(self):
         rect = QtCore.QRect()
