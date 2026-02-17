@@ -17,6 +17,7 @@ class OFnUIScene(QtCore.QObject):
 
     def __init__(self):
         super(OFnUIScene, self).__init__()
+        os.environ["OFSN"] = ""
         self.__filepath = None
         self.__scene = OFnScene()
         self.__scene_graph = OFnGraphScene(self.__scene)
@@ -28,6 +29,7 @@ class OFnUIScene(QtCore.QObject):
         if res:
             self.__emitAllContents()
             self.__filepath = os.path.normpath(filepath)
+            os.environ["OFSN"] = os.path.normpath(os.path.dirname(os.path.abspath(self.__filepath)))
 
         return res
 
@@ -40,6 +42,7 @@ class OFnUIScene(QtCore.QObject):
     def saveTo(self, filepath):
         if self.__scene.write(filepath):
             self.__filepath = os.path.normpath(filepath)
+            os.environ["OFSN"] = os.path.normpath(os.path.dirname(os.path.abspath(self.__filepath)))
             return True
 
         return False

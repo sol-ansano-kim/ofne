@@ -18,8 +18,14 @@ class _TypedLineEditor(QtWidgets.QLineEdit):
         self.__refresh()
         self.editingFinished.connect(self.__textChanged)
 
+    def setParam(self, v):
+        if self.__param.isValid(v):
+            self.__node.setParamValue(self.__param_name, v)
+            self.__refresh()
+            self.paramChanged.emit()
+
     def __refresh(self):
-        self.setText(str(self.__node.getParamValue(self.__param_name)))
+        self.setText(str(self.__node.getParamValue(self.__param_name, raw=True)))
 
     def _typed(self, v):
         raise exceptions.OFnNotImplementedError(self, "_typed")
@@ -121,6 +127,49 @@ class OFnUIStrCombo(QtWidgets.QComboBox):
             self.__node.setParamValue(self.__param_name, self.currentText())
             self.paramChanged.emit()
 
+    def setParam(self, v):
+        # don't have to test self.__param.enforceValueList(), isValid will returns False
+        if self.__param.isValid(v) and v != self.__node.getParamValue(self.__param_name):
+            index = self.findText(v, QtCore.Qt.MatchExactly)
+            if index < 0:
+                self.insertItem(0, v)
+                index = 0
+
+            self.setCurrentIndex(index)
+
+
+class OFnUIPathInput(QtWidgets.QWidget):
+    paramChanged = QtCore.Signal()
+
+    def __init__(self, node, paramName, parent=None):
+        super(OFnUIPathInput, self).__init__(parent=parent)
+        layout = QtWidgets.QHBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(1)
+        self.__param = node.getParam(paramName)
+        button = QtWidgets.QPushButton(parent=self)
+        button.setIcon(self.style().standardIcon(QtWidgets.QStyle.SP_DirOpenIcon))
+
+        if self.__param.valueList():
+            self.__param_widget = OFnUIStrCombo(node, paramName, parent=self)
+        else:
+            self.__param_widget = OFnUIStrParam(node, paramName, parent=self)
+
+        layout.addWidget(self.__param_widget)
+        layout.addWidget(button)
+
+        self.__param_widget.paramChanged.connect(self.paramChanged.emit)
+        button.clicked.connect(self.__pathDialog)
+
+    def __pathDialog(self):
+        if self.__param.pathType() == param.OFnParamPath.TypeFile:
+            res = QtWidgets.QFileDialog.getOpenFileName(self, "Open File")[0]
+        else:
+            res = QtWidgets.QFileDialog.getExistingDirectory(self, "Open Directory")
+
+        if res:
+            self.__param_widget.setParam(res)
+
 
 class OFnUIBoolParam(QtWidgets.QCheckBox):
     paramChanged = QtCore.Signal()
@@ -195,6 +244,8 @@ class OFnUIParams(QtWidgets.QFrame):
                     pw = OFnUIIntParam(self.__node, pn, parent=self)
                 elif p.type() == param.ParamTypeFloat:
                     pw = OFnUIFloatParam(self.__node, pn, parent=self)
+                elif p.type() == param.ParamTypePath:
+                    pw = OFnUIPathInput(self.__node, pn, parent=self)
                 elif p.type() == param.ParamTypeStr:
                     if p.valueList():
                         pw = OFnUIStrCombo(self.__node, pn, parent=self)

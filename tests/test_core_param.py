@@ -1,3 +1,4 @@
+import os
 import unittest
 
 
@@ -8,7 +9,6 @@ class ParamTest(unittest.TestCase):
             from ofne.core import packet
         except:
             import sys
-            import os
             sys.path.append((os.path.abspath(os.path.join(__file__, "../../python"))))
         finally:
             from ofne.core import param
@@ -276,6 +276,15 @@ class ParamTest(unittest.TestCase):
         p = self.param.OFnParamStr("s", label="str")
         self.assertEqual(p.name(), "s")
         self.assertEqual(p.label(), "str")
+
+    def test_path(self):
+        p = self.param.OFnParamPath("p")
+        p.set("${_PATHENVTEST}/aaa/bbb")
+        self.assertEqual(p.get(), "${_PATHENVTEST}/aaa/bbb")
+        self.assertEqual(p.path(), "${_PATHENVTEST}/aaa/bbb")
+        os.environ["_PATHENVTEST"] = "dddd"
+        self.assertEqual(p.get(), "${_PATHENVTEST}/aaa/bbb")
+        self.assertEqual(p.path(), "dddd/aaa/bbb")
 
     def test_params(self):
         params = self.param.OFnParams([])

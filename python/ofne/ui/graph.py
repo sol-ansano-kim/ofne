@@ -552,6 +552,7 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
 
         if self.__scene.saveTo(filepath):
             self.sceneFilepathChanged.emit(self.__scene.filepath())
+            self.graphChanged.emit()
 
     def save(self):
         return self.saveSceneAs(self.__scene.filepath())

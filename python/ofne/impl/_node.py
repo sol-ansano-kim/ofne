@@ -38,8 +38,8 @@ class _OFnNodeImpl(object):
     def getParam(self, name):
         return self.__params.getParam(name)
 
-    def getParamValue(self, name, default=None):
-        return self.__params.get(name, default=default)
+    def getParamValue(self, name, default=None, raw=False):
+        return self.__params.get(name, default=default, raw=raw)
 
     def setParamValue(self, name, value):
         self.__params.set(name, value)

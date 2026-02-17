@@ -1,3 +1,5 @@
+import re
+import os
 from . import abst
 from .. import exceptions
 
@@ -6,7 +8,10 @@ ParamTypeBool = 0
 ParamTypeInt = 1
 ParamTypeFloat = 2
 ParamTypeStr = 3
-ParamTypeCode = 4
+ParamTypePath = 4
+ParamTypeCode = 5
+
+RE_ENV = re.compile("[$][{](?P<name>[a-zA-Z0-9-_]+)[}]")
 
 
 class OFnParamBase(abst._ParamBase):
@@ -92,6 +97,37 @@ class OFnParamStr(OFnParamBase):
 
     def copy(self):
         n = OFnParamStr(self.name(), default=self.default(), label=self.label(), valueList=self.__value_list, enforceValueList=self.__enforce_value_list)
+        n.set(self.get())
+
+        return n
+
+
+class OFnParamPath(OFnParamStr):
+    TypeFile = 0
+    TypeDirectory = 1
+
+    def __init__(self, name, default="", label=None, valueList=None, pathType=TypeFile):
+        self.__path_type = pathType
+        super(OFnParamPath, self).__init__(name, default="", label=None, valueList=valueList)
+
+    def type(self):
+        return ParamTypePath
+
+    def pathType(self):
+        return self.__path_type
+
+    def path(self):
+        v = self.get()
+        envs = set(RE_ENV.findall(v))
+
+        for env in envs:
+            if env in os.environ:
+                v = v.replace("${" + env + "}", os.environ[env])
+
+        return v
+
+    def copy(self):
+        n = OFnParamPath(self.name(), default=self.default(), label=self.label(), valueList=self.valueList(), pathType=self.pathType())
         n.set(self.get())
 
         return n
@@ -196,9 +232,12 @@ class OFnParams(abst._ParamsBase):
 
         return self.__param_map[key].copy()
 
-    def get(self, key, default=None):
+    def get(self, key, raw=False, default=None):
         if key not in self.__param_map:
             return default
+
+        if not raw and self.__param_map[key].type() == ParamTypePath:
+            return self.__param_map[key].path()
 
         return self.__param_map[key].get()
 

@@ -41,8 +41,8 @@ class OFnNode(abst._NodeBase):
     def getParam(self, name):
         return self.__impl.getParam(name)
 
-    def getParamValue(self, name, default=None):
-        return self.__impl.getParamValue(name, default=default)
+    def getParamValue(self, name, default=None, raw=False):
+        return self.__impl.getParamValue(name, default=default, raw=raw)
 
     def setParamValue(self, name, value):
         self.__impl.setParamValue(name, value)

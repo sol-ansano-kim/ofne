@@ -10,7 +10,7 @@ class ReadImage(plugin.OFnOp):
 
     def params(self):
         return [
-            plugin.OFnParamStr("path", "")
+            plugin.OFnParamPath("path", "")
         ]
 
     def needs(self):
@@ -26,7 +26,7 @@ class ReadImage(plugin.OFnOp):
             return plugin.OFnPacket()
 
         if not os.path.isfile(path):
-            raise Exception("No such image file")
+            raise Exception("No such image file : {}".format(path))
 
         buf = oiio.ImageBuf(path)
 
