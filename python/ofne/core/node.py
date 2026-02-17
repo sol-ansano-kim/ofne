@@ -13,7 +13,7 @@ class OFnNode(abst._NodeBase):
         self.rename(name or self.type())
 
     def id(self):
-        return self.__hash__()
+        return self.__impl.id()
 
     def __hash__(self):
         return self.__impl.__hash__()

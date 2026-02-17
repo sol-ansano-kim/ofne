@@ -18,10 +18,10 @@ class _OFnNodeImpl(object):
         return self.__id.int
 
     def id(self):
-        return self.__id
+        return self.__id.__str__()
 
     def __eq__(self, other):
-        return isinstance(other, _OFnNodeImpl) and other.id() == self.__id
+        return isinstance(other, _OFnNodeImpl) and other.__hash__() == self.__hash__()
 
     def __neq__(self, other):
         return not self.__eq__(other)
