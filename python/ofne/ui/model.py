@@ -150,7 +150,7 @@ class OFnUIScene(QtCore.QObject):
                 self.__connections.remove(exh)
                 self.nodeDisconnected.emit(exh)
 
-            self.nodeDeleted.emit(str(nh))
+            self.nodeDeleted.emit(nh)
 
     def connect(self, src, dst, index):
         exh = None

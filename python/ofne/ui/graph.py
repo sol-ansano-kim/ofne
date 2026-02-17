@@ -600,8 +600,8 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         else:
             self.nodeSelected.emit(None)
 
-    def __onDeleteNode(self, strid):
-        itm = self.__nodes.pop(int(strid))
+    def __onDeleteNode(self, id):
+        itm = self.__nodes.pop(id)
         if itm is None:
             return
 
