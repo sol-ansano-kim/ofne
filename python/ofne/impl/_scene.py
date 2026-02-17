@@ -153,7 +153,7 @@ class _OFnSceneImpl(object):
 
             params = {}
             for pn in n.paramNames():
-                params[pn] = n.getParamValue(pn)
+                params[pn] = n.getParamValue(pn, raw=True)
 
             user_data = {}
             for uk in n.userDataKeys():
