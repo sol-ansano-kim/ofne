@@ -232,7 +232,7 @@ class OFnParams(abst._ParamsBase):
 
         return self.__param_map[key].copy()
 
-    def get(self, key, raw=False, default=None):
+    def get(self, key, default=None, raw=False):
         if key not in self.__param_map:
             return default
 
