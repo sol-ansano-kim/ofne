@@ -1,3 +1,4 @@
+import codecs
 import sys
 import copy
 import traceback
@@ -78,8 +79,8 @@ class _OFnSceneImpl(object):
     def read(self, filepath):
         try:
             d = None
-            with open(filepath, "r") as f:
-                return self.load(eval(f.read().encode(sys.getfilesystemencoding())))
+            with codecs.open(filepath, mode="r", encoding="utf-8") as f:
+                return self.load(eval(f.read()))
         except:
             print(f"Error : Failed to read the scene -\n{traceback.format_exc()}")
             return False
@@ -126,7 +127,7 @@ class _OFnSceneImpl(object):
 
     def write(self, filepath):
         try:
-            with open(filepath, "w", encoding=sys.getfilesystemencoding()) as f:
+            with codecs.open(filepath, mode="w", encoding="utf-8") as f:
                 pprint(self.toDict(), f)
 
             return True
