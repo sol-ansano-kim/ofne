@@ -725,9 +725,11 @@ class OFnUIPixelDraw(QtWidgets.QWidget):
 
     def setColors(self, colors):
         self.__colors = [QtGui.QColor.fromRgbF(*x[:3], min(1.0, x[3])) for x in colors]
+        self.update()
 
     def reset(self):
         self.__colors = self.__default_colors[:]
+        self.update()
 
     def paintEvent(self, event):
         painter = QtGui.QPainter(self)
