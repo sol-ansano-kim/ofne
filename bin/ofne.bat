@@ -1,3 +1,3 @@
 @echo off
 
-python %~dp0ofne %*
+python %~dp0_ofne.py %*

@@ -1,0 +1,29 @@
+import os
+import sys
+import argparse
+from PySide6 import QtWidgets
+
+
+# TODO : parsing options
+try:
+    import ofne
+except:
+    sys.path.append(os.path.abspath(os.path.join(__file__, "../../python")))
+finally:
+    import ofne.ui
+
+
+def main():
+    parser = argparse.ArgumentParser("OFNE")
+    parser.add_argument("Scene", nargs="?", help="an ofsn file path to open")
+    opts = parser.parse_args()
+
+    app = QtWidgets.QApplication(sys.argv)
+    win = ofne.ui.MainWindow(scene=opts.Scene)
+    win.show()
+
+    sys.exit(app.exec())
+
+
+if __name__ == "__main__":
+    main()
