@@ -15,6 +15,7 @@
 - Tab: Create a new node
 - F: Fit the graph to the all(selected) node(s)
 - B: Bypass the selected node(s)
+- N: Add a note for writing comments
 - Delete: Delete selected node(s) or connection(s)
 - Ctrl + C / Ctrl + V: Copy and Paste node(s)
 - V: Connect the selected node to the Viewer
