@@ -35,3 +35,9 @@ class OFnScene(abst._SceneBase):
 
     def clear(self):
         return self.__impl.clear()
+
+    def misc(self):
+        return self.__impl.misc()
+
+    def setMisc(self, misc):
+        self.__impl.setMisc(misc)

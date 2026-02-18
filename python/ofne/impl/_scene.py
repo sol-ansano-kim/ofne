@@ -1,4 +1,5 @@
 import sys
+import copy
 import traceback
 from pprint import pprint
 
@@ -9,6 +10,7 @@ class _OFnSceneImpl(object):
         self.__node_class = nodeClass
         self.__op_manager = opManager
         self.__nodes = {}
+        self.__misc = {}
 
     def createNode(self, type, name=None):
         op = self.__op_manager.getOp(type)
@@ -115,6 +117,8 @@ class _OFnSceneImpl(object):
 
                 id_map[con["dst"]].connect(id_map[con["src"]], index=con["index"])
 
+            self.__misc = copy.deepcopy(data.get("misc", {}))
+
             return True
         except:
             print(f"Error : Failed to load the scene -\n{traceback.format_exc()}")
@@ -137,6 +141,8 @@ class _OFnSceneImpl(object):
             v = self.__nodes.pop(k)
             del v
 
+        self.__misc = {}
+
         return True
 
     def toDict(self, nodeBounding=None):
@@ -144,7 +150,8 @@ class _OFnSceneImpl(object):
 
         d = {
             "nodes": [],
-            "connections": []
+            "connections": [],
+            "misc": []
         }
 
         for n in self.__nodes.values():
@@ -185,4 +192,12 @@ class _OFnSceneImpl(object):
                     }
                 )
 
+        d["misc"] = copy.deepcopy(self.__misc)
+
         return d
+
+    def misc(self):
+        return copy.deepcopy(self.__misc)
+
+    def setMisc(self, misc):
+        self.__misc = copy.deepcopy(misc)
