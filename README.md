@@ -1,5 +1,7 @@
 # OFNE
 
+OFNE is a node-based image processing software
+
 ![demo](https://github.com/user-attachments/assets/7393e76a-30c6-41bd-916f-263a291475ab)
 
 
