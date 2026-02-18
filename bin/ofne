@@ -8,9 +8,10 @@ from PySide6 import QtWidgets
 
 # TODO : parsing options
 try:
-    import ofne.ui
+    import ofne
 except:
     sys.path.append(os.path.abspath(os.path.join(__file__, "../../python")))
+finally:
     import ofne.ui
 
 
