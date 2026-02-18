@@ -100,17 +100,17 @@ class OFnUIStrCombo(QtWidgets.QComboBox):
         self.__param = self.__node.getParam(paramName)
         self.__param_name = paramName
         vls = self.__param.valueList()
-        pv = self.__node.getParamValue(self.__param_name)
+        pv = self.__node.getParamValue(self.__param_name, raw=True)
         if not self.__param.enforceValueList() and pv not in vls:
             vls.insert(0, pv)
         self.addItems(vls)
 
         if self.__param.enforceValueList():
-            self.setCurrentIndex(self.findText(self.__node.getParamValue(self.__param_name)))
+            self.setCurrentIndex(self.findText(self.__node.getParamValue(self.__param_name, raw=True)))
         else:
             self.__emit_when_leave = True
             self.setEditable(True)
-            self.setCurrentText(self.__node.getParamValue(self.__param_name))
+            self.setCurrentText(self.__node.getParamValue(self.__param_name, raw=True))
 
         self.currentIndexChanged.connect(self.__changed)
 
@@ -124,13 +124,13 @@ class OFnUIStrCombo(QtWidgets.QComboBox):
         self.__enter = False
 
     def __changed(self, *args):
-        if self.__node.getParamValue(self.__param_name) != self.currentText():
+        if self.__node.getParamValue(self.__param_name, raw=True) != self.currentText():
             self.__node.setParamValue(self.__param_name, self.currentText())
             self.paramChanged.emit()
 
     def setParam(self, v):
         # don't have to test self.__param.enforceValueList(), isValid will returns False
-        if self.__param.isValid(v) and v != self.__node.getParamValue(self.__param_name):
+        if self.__param.isValid(v) and v != self.__node.getParamValue(self.__param_name, raw=True):
             index = self.findText(v, QtCore.Qt.MatchExactly)
             if index < 0:
                 self.insertItem(0, v)
@@ -181,7 +181,7 @@ class OFnUIBoolParam(QtWidgets.QCheckBox):
         self.__node = node
         self.__param = self.__node.getParam(paramName)
         self.__param_name = paramName
-        self.setChecked(self.__node.getParamValue(self.__param_name))
+        self.setChecked(self.__node.getParamValue(self.__param_name, raw=True))
         self.stateChanged.connect(self.__stateChanged)
 
     def __stateChanged(self, state):
