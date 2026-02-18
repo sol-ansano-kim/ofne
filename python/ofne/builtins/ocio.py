@@ -380,7 +380,7 @@ class OCIOColorSpaceTransform(plugin.OFnOp):
 
     def params(self):
         return [
-            plugin.OFnParamStr("config", "", valueList=BUILTIN_CONFIGS, enforceValueList=False),
+            plugin.OFnParamPath("config", "", valueList=BUILTIN_CONFIGS),
             plugin.OFnParamStr("from", "", valueList=list(ROLES.keys()), enforceValueList=False),
             plugin.OFnParamStr("to", "", valueList=list(ROLES.keys()), enforceValueList=False)
         ]
@@ -421,7 +421,7 @@ class OCIODisplayViewTransform(plugin.OFnOp):
 
     def params(self):
         return [
-            plugin.OFnParamStr("config", "", valueList=BUILTIN_CONFIGS, enforceValueList=False),
+            plugin.OFnParamPath("config", "", valueList=BUILTIN_CONFIGS),
             plugin.OFnParamStr("from", "", valueList=list(ROLES.keys()), enforceValueList=False),
             plugin.OFnParamStr("display", ""),
             plugin.OFnParamStr("view", ""),
@@ -465,7 +465,7 @@ class OCIONamedTransform(plugin.OFnOp):
 
     def params(self):
         return [
-            plugin.OFnParamStr("config", "", valueList=BUILTIN_CONFIGS, enforceValueList=False),
+            plugin.OFnParamPath("config", "", valueList=BUILTIN_CONFIGS),
             plugin.OFnParamStr("name", ""),
             plugin.OFnParamBool("inverse", False)
         ]
