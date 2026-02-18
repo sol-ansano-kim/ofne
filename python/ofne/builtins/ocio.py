@@ -20,6 +20,16 @@ ROLES = {
     "role:texture_paint": ocio.ROLE_TEXTURE_PAINT
 }
 
+AKA = {
+    "aka:ap0": ["lin_ap0"],
+    "aka:ap1": ["lin_ap1"],
+    "aka:cc": ["acescc_ap1"],
+    "aka:cct": ["acescct_ap1"],
+    "aka:srgb": ["srgb_tx"],
+    "aka:srgb_linear": ["lin_srgb"],
+    "aka:xyzd65": ["cie_xyz_d65_display", "cie_xyz_d65"]
+}
+
 INTERP_MAP = {
     "best": ocio.INTERP_BEST,
     "cubic": ocio.INTERP_CUBIC,
@@ -52,8 +62,13 @@ def _getOCIO(path):
 
 
 def _getColorSpaceName(config, inpt):
-    if inpt in ROLES:
-        inpt = ROLES[inpt]
+    global AKA
+
+    if inpt in AKA:
+        for al in AKA[inpt]:
+            cs = config.getColorSpace(al)
+            if cs:
+                return cs.getName()
 
     return inpt
 
@@ -381,8 +396,8 @@ class OCIOColorSpaceTransform(plugin.OFnOp):
     def params(self):
         return [
             plugin.OFnParamPath("config", "", valueList=BUILTIN_CONFIGS),
-            plugin.OFnParamStr("from", "", valueList=list(ROLES.keys()), enforceValueList=False),
-            plugin.OFnParamStr("to", "", valueList=list(ROLES.keys()), enforceValueList=False)
+            plugin.OFnParamStr("from", "", valueList=list(AKA.keys()), enforceValueList=False),
+            plugin.OFnParamStr("to", "", valueList=list(AKA.keys()), enforceValueList=False)
         ]
 
     def needs(self):
@@ -422,7 +437,7 @@ class OCIODisplayViewTransform(plugin.OFnOp):
     def params(self):
         return [
             plugin.OFnParamPath("config", "", valueList=BUILTIN_CONFIGS),
-            plugin.OFnParamStr("from", "", valueList=list(ROLES.keys()), enforceValueList=False),
+            plugin.OFnParamStr("from", "", valueList=list(AKA.keys()), enforceValueList=False),
             plugin.OFnParamStr("display", ""),
             plugin.OFnParamStr("view", ""),
             plugin.OFnParamBool("inverse", False)
