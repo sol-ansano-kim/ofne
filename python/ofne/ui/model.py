@@ -154,7 +154,13 @@ class OFnUIScene(QtCore.QObject):
             r = None
             t = None
             b = None
+
             def _updateRect(x, y):
+                nonlocal l
+                nonlocal r
+                nonlocal t
+                nonlocal b
+
                 if l is None:
                     l = x
                 else:
