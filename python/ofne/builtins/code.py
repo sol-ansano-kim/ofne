@@ -4,13 +4,13 @@ import PyOpenColorIO
 from ofne import plugin
 
 
-DefaultPythonExpression = """# # Inputs
-# # inPackets : A container of input packets
+DefaultPythonExpression = """# Inputs - Automatically provided by the program
+# # inPackets : A container of input packets, Packets can be accessed by index e.g. inPackets.packet(0).data(). data() returns a NumPy array
 # # oiio : OpenImageIO library
 # # ocio : PyOpenColorIO library
 # # np : NumPy library
 # # Packet : Packet class
-# # Output
+# Output - The expression must produce outPacket
 # # outPacket: A Packet constructed from the processed result
 # in_data = inPackets.packet(0).data()
 # in_shape = in_data.shape
