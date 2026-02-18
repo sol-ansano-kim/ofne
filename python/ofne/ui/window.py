@@ -54,6 +54,7 @@ class OFnUIMain(QtWidgets.QMainWindow):
         self.__graph.nodeSelected.connect(self.__onNodeSelected)
         self.__params.nodeRenamed.connect(self.__onNodeRenamed)
         self.__params.paramChanged.connect(self.__graph.evaluate)
+        self.__params.updateRequest.connect(self.__graph.updateItem)
         self.__viewport.aimPositionChanged.connect(self.__aimPositionChanged)
         self.__viewport_settings.formatChanged.connect(self.__viewport.setFormat)
 

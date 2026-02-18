@@ -3,7 +3,8 @@ from PySide6 import QtCore
 
 from .. import exceptions
 from ..core import param
-from ..core.node import OFnNode
+from ..core.abst import _NodeBase
+from . import model
 
 
 class _TypedLineEditor(QtWidgets.QLineEdit):
@@ -190,7 +191,8 @@ class OFnUIBoolParam(QtWidgets.QCheckBox):
 
 class OFnUIParams(QtWidgets.QFrame):
     paramChanged = QtCore.Signal()
-    nodeRenamed = QtCore.Signal(OFnNode)
+    updateRequest =  QtCore.Signal(_NodeBase)
+    nodeRenamed = QtCore.Signal(_NodeBase)
 
     def __init__(self, parent=None):
         super(OFnUIParams, self).__init__(parent=parent)
@@ -228,12 +230,18 @@ class OFnUIParams(QtWidgets.QFrame):
 
     def __buildParams(self):
         if self.__node:
-            self.__type_label.setText(self.__node.type())
-            # TODO : hmm...
-            name_editable = self.__node.type() != "Viewer"
-            self.__name_label.setVisible(name_editable)
-            self.__name_line.setVisible(name_editable)
-            self.__name_line.setText(self.__node.name())
+            is_a_note = isinstance(self.__node, model.OFnUINote)
+            if is_a_note:
+                self.__type_label.setVisible(False)
+                self.__name_label.setVisible(False)
+                self.__name_line.setVisible(False)
+            else:
+                self.__type_label.setText(self.__node.type())
+                # TODO : hmm...
+                name_editable = self.__node.type() != "Viewer"
+                self.__name_label.setVisible(name_editable)
+                self.__name_line.setVisible(name_editable)
+                self.__name_line.setText(self.__node.name())
 
             for pn in self.__node.paramNames():
                 p = self.__node.getParam(pn)
@@ -260,7 +268,10 @@ class OFnUIParams(QtWidgets.QFrame):
                 layout.addStretch(1)
                 if pw:
                     layout.addWidget(pw)
-                    pw.paramChanged.connect(self.paramChanged.emit)
+                    if not is_a_note:
+                        pw.paramChanged.connect(self.paramChanged.emit)
+                    else:
+                        pw.paramChanged.connect(self.__requestUpdate)
 
                 self.__param_layout.addLayout(layout)
 
@@ -270,6 +281,9 @@ class OFnUIParams(QtWidgets.QFrame):
             self.__name_label.setVisible(False)
             self.__name_line.setVisible(False)
             self.__name_line.setText("")
+
+    def __requestUpdate(self):
+        self.updateRequest.emit(self.__node)
 
     def clearLayout(self):
         curs = [self.__param_layout]

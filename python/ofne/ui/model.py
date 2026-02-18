@@ -1,5 +1,8 @@
 import os
+import uuid
 import numpy as np
+from ..core import abst
+from ..core import param
 from ..core import node
 from ..core import resource
 from ..core.scene import OFnScene
@@ -8,9 +11,72 @@ from PySide6 import QtCore
 from PySide6 import QtGui
 
 
+class OFnUINote(abst._NodeBase):
+    def __init__(self):
+        super(OFnUINote, self).__init__()
+        self.__id = uuid.uuid4()
+        self.__x = 0
+        self.__y = 0
+        self.__w = 100
+        self.__h = 100
+        self.__params = param.OFnParams(
+            [
+                param.OFnParamCode("note", default="")
+            ]
+        )
+
+    def toDict(self):
+        return {
+            "id": self.id(),
+            "pos": (self.__x, self.__y),
+            "size": (self.__w, self.__h),
+            "note": self.getParamValue("note")
+        }
+
+    def __hash__(self):
+        return self.__id.int
+
+    def id(self):
+        return self.__id.__str__()
+
+    def __eq__(self, other):
+        return isinstance(other, OFnUINote) and other.id() == self.__id
+
+    def __neq__(self, other):
+        return not self.__eq__(other)
+
+    def pos(self):
+        return (self.__x, self.__y)
+
+    def setPos(self, x, y):
+        self.__x = x
+        self.__y = y
+
+    def size(self):
+        return (self.__w, self.__h)
+
+    def setSize(self, w, h):
+        self.__w = w
+        self.__h = h
+
+    def paramNames(self):
+        return self.__params.keys()
+
+    def getParam(self, name):
+        return self.__params.getParam(name)
+
+    def getParamValue(self, name, default=None, raw=False):
+        return self.__params.get(name, default=default, raw=raw)
+
+    def setParamValue(self, name, value):
+        self.__params.set(name, value)
+
+
 class OFnUIScene(QtCore.QObject):
     nodeCreated = QtCore.Signal(node.OFnNode)
     nodeDeleted = QtCore.Signal(str)
+    noteCreated = QtCore.Signal(OFnUINote)
+    noteDeleted = QtCore.Signal(str)
     nodeConnected = QtCore.Signal(tuple)
     nodeDisconnected = QtCore.Signal(tuple)
     evaluationFinished = QtCore.Signal()
@@ -21,6 +87,7 @@ class OFnUIScene(QtCore.QObject):
         self.__filepath = None
         self.__scene = OFnScene()
         self.__scene_graph = OFnGraphScene(self.__scene)
+        self.__notes = {}
         self.__connections = set()
 
     def read(self, filepath):
@@ -31,6 +98,9 @@ class OFnUIScene(QtCore.QObject):
             self.__filepath = os.path.normpath(filepath)
             os.environ["OFSN"] = os.path.normpath(os.path.dirname(os.path.abspath(self.__filepath)))
 
+            for nd in self.__scene.misc().get("notes", []):
+                self.createNote(nd)
+
         return res
 
     def filepath(self):
@@ -40,16 +110,32 @@ class OFnUIScene(QtCore.QObject):
         return self.__scene.write(self.__filepath)
 
     def saveTo(self, filepath):
+        notes = []
+        misc = {"notes": notes}
+        for n in self.__notes.values():
+            notes.append(n.toDict())
+
+        self.__scene.setMisc(misc)
         if self.__scene.write(filepath):
             self.__filepath = os.path.normpath(filepath)
             os.environ["OFSN"] = os.path.normpath(os.path.dirname(os.path.abspath(self.__filepath)))
+
             return True
 
         return False
 
-    def copyToClipboard(self, nodeBounding):
+    def copyToClipboard(self, nodeBounding, noteBounding):
         if self.__scene:
-            d = self.__scene.toDict(nodeBounding=nodeBounding)
+            if nodeBounding:
+                d = self.__scene.toDict(nodeBounding=nodeBounding)
+            else:
+                d = {"nodes": [], "connections": []}
+
+            new_notes = []
+            for note in noteBounding:
+                new_notes.append(note.toDict())
+            d["misc"] = {"notes": new_notes}
+
             QtGui.QGuiApplication.clipboard().setText(d.__repr__())
 
     def loadFromClipboard(self, center=None):
@@ -68,27 +154,32 @@ class OFnUIScene(QtCore.QObject):
             r = None
             t = None
             b = None
+            def _updateRect(x, y):
+                if l is None:
+                    l = x
+                else:
+                    l = min(l, x)
+                if r is None:
+                    r = x
+                else:
+                    r = max(r, x)
+                if t is None:
+                    t = y
+                else:
+                    t = min(t, y)
+                if b is None:
+                    b = y
+                else:
+                    b = max(b, y)
+
 
             for n in d["nodes"]:
                 ud = n.get("userData")
                 if "ui:pos" in ud:
-                    x, y = ud["ui:pos"]
-                    if l is None:
-                        l = x
-                    else:
-                        l = min(l, x)
-                    if r is None:
-                        r = x
-                    else:
-                        r = max(r, x)
-                    if t is None:
-                        t = y
-                    else:
-                        t = min(t, y)
-                    if b is None:
-                        b = y
-                    else:
-                        b = max(b, y)
+                    _updateRect(*ud["ui:pos"])
+                    
+            for n in d.get("misc", {}).get("notes", []):
+                _updateRect(*n["pos"])
 
             if l is not None and r is not None and t is not None and b is not None:
                 cx = (l + r) * 0.5
@@ -100,8 +191,15 @@ class OFnUIScene(QtCore.QObject):
                         x, y = ud["ui:pos"]
                         ud["ui:pos"] = (x - cx + center.x(), y - cy + center.y())
 
+                for n in d.get("misc", {}).get("notes", []):
+                    x, y = n["pos"]
+                    n["pos"] = (x - cx + center.x(), y - cy + center.y())
+
         if self.__scene.load(d):
             self.__emitAllContents()
+
+        for n in d.get("misc", {}).get("notes", []):
+            self.createNote(n)
 
     def __emitAllContents(self):
         for n in self.__scene.nodes():
@@ -129,6 +227,23 @@ class OFnUIScene(QtCore.QObject):
 
             self.nodeCreated.emit(nn)
 
+    def createNote(self, data):
+        nt = OFnUINote()
+        pos = data.get("pos")
+        if pos:
+            nt.setPos(*pos)
+
+        size = data.get("size")
+        if size:
+            nt.setSize(*size)
+
+        note = data.get("note")
+        if note:
+            nt.setParamValue("note", note)
+
+        self.__notes[nt.id()] = nt
+        self.noteCreated.emit(nt)
+
     def deleteNode(self, node):
         hashes = []
         nh = node.id()
@@ -151,6 +266,11 @@ class OFnUIScene(QtCore.QObject):
                 self.nodeDisconnected.emit(exh)
 
             self.nodeDeleted.emit(nh)
+
+    def deleteNote(self, note):
+        if note.id() in self.__notes:
+            self.__notes.pop(note.id())
+            self.noteDeleted.emit(note.id())
 
     def connect(self, src, dst, index):
         exh = None

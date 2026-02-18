@@ -346,37 +346,86 @@ class OFnUINoteBody(QtWidgets.QGraphicsPathItem):
 
 
 class OFnUINoteText(QtWidgets.QGraphicsTextItem):
-    def __init__(self, parent=None):
+    def __init__(self, body, parent=None):
         super(OFnUINoteText, self).__init__(parent=parent)
+        self.__body = body
         f = self.font()
         f.setPixelSize(15)
         self.setFont(f)
-        self.setTextWidth(100)
+        self.setDefaultTextColor(QtCore.Qt.white)
+
+    def opaqueArea(self):
+        return self.__body.boundingRect()
+
+    def boundingRect(self):
+        return self.__body.boundingRect()
 
 
-class OFnUINote(QtWidgets.QGraphicsItemGroup):
+class OFnUINoteCorner(QtWidgets.QGraphicsPolygonItem):
     def __init__(self, parent=None):
-        super(OFnUINote, self).__init__(parent=parent)
+        super(OFnUINoteCorner, self).__init__(parent=parent)
+        self.__parent = parent
+        self.__brush = QtGui.QBrush(QtGui.QColor(81, 160, 79), QtCore.Qt.SolidPattern)
+        self.setBrush(self.__brush)
+        self.setPen(QtCore.Qt.NoPen)
+
+        polygon = QtGui.QPolygon(
+            [
+                QtCore.QPoint(-1, -20),
+                QtCore.QPoint(-20, -1),
+                QtCore.QPoint(-1, -1),
+            ]
+        )
+
+        self.setPolygon(polygon)
+
+    def noteItem(self):
+        return self.__parent
+
+
+class OFnUINoteItem(QtWidgets.QGraphicsItemGroup):
+    def __init__(self, note, parent=None):
+        super(OFnUINoteItem, self).__init__(parent=parent)
+        self.setHandlesChildEvents(False)
+        self.__note = note
         self.setZValue(10)
         self.setFlags(QtWidgets.QGraphicsRectItem.ItemIsMovable | QtWidgets.QGraphicsRectItem.ItemIsSelectable)
 
         self.__body = OFnUINoteBody(parent=self)
+        self.setPos(*note.pos())
         self.addToGroup(self.__body)
+        self.__text = OFnUINoteText(self.__body, parent=self)
+        self.__corner = OFnUINoteCorner(parent=self)
 
-        self.__text = OFnUINoteText(parent=self)
         self.addToGroup(self.__text)
+        self.addToGroup(self.__corner)
 
-    def height(self):
-        return self.__body.height()
+        self.setSize(*note.size())
+        self.updateNote()
 
-    def setHeight(self, h):
-        self.__body.setHeight(h)
+    def boundingRect(self):
+        return self.childrenBoundingRect()
 
-    def width(self):
-        return self.__body.width()
+    def note(self):
+        return self.__note
 
-    def setWidth(self, w):
+    def setSize(self, w, h):
+        w = max(20, w)
+        h = max(20, h)
         self.__body.setWidth(w)
+        self.__body.setHeight(h)
+        self.__corner.setPos(w, h)
+        self.__text.setTextWidth(w)
+
+    def updateNote(self):
+        self.__text.setPlainText(self.__note.getParamValue("note"))
+
+    def size(self):
+        return (self.__body.width(), self.__body.height())
+
+    def paint(self, painter, option, widget):
+        # cancel focus drawing
+        pass
 
 
 class OFnUIConnection(QtWidgets.QGraphicsPathItem):
@@ -447,6 +496,7 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         super(OFnUINodeGraph, self).__init__(parent=parent)
         self.__slient = False
         self.__nodes = {}
+        self.__notes = {}
         self.__viewer_node = None
         self.__connections = {}
         self.__highlighted_port = None
@@ -455,6 +505,7 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         self.__old_scene_pos = None
         self.__scene = None
         self.__graphic_scene = None
+        self.__resize_note = None
 
         self.__op_selector = OFnUIOpSelector(parent=self)
 
@@ -513,6 +564,7 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
 
     def __acceptScene(self, scene):
         self.__nodes = {}
+        self.__notes = {}
         self.__viewer_node = None
         self.__connections = {}
 
@@ -523,6 +575,8 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         self.__scene.nodeConnected.connect(self.__onConnected)
         self.__scene.nodeDisconnected.connect(self.__onDisconnected)
         self.__scene.evaluationFinished.connect(self.__onEvalFinished)
+        self.__scene.noteCreated.connect(self.__onNoteCreated)
+        self.__scene.noteDeleted.connect(self.__onDeleteNote)
 
         old_gscene = self.__graphic_scene
         self.__graphic_scene = QtWidgets.QGraphicsScene()
@@ -538,6 +592,8 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
             old_scene.nodeConnected.disconnect(self.__onConnected)
             old_scene.nodeDisconnected.disconnect(self.__onDisconnected)
             old_scene.evaluationFinished.disconnect(self.__onEvalFinished)
+            old_scene.noteCreated.disconnect(self.__onNoteCreated)
+            old_scene.noteDeleted.disconnect(self.__onDeleteNote)
 
             del old_scene
 
@@ -550,12 +606,23 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
             pos = node.pos()
             node.node().setUserData("ui:pos", (pos.x(), pos.y()))
 
+        for note in self.__notes.values():
+            nt = note.note()
+            pos = note.pos()
+            nt.setPos(pos.x(), pos.y())
+            nt.setSize(*note.size())
+
         if self.__scene.saveTo(filepath):
             self.sceneFilepathChanged.emit(self.__scene.filepath())
             self.graphChanged.emit()
 
     def save(self):
         return self.saveSceneAs(self.__scene.filepath())
+
+    def updateItem(self, item):
+        if isinstance(item, model.OFnUINote):
+            note = self.__notes.get(item.id())
+            note.updateNote()
 
     def __onConnected(self, hash):
         if self.__connector:
@@ -597,8 +664,14 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         nds = [x for x in self.__graphic_scene.selectedItems() if isinstance(x, OFnUINodeItem)]
         if nds:
             self.nodeSelected.emit(nds[-1].node())
+            return
         else:
-            self.nodeSelected.emit(None)
+            nts = [x for x in self.__graphic_scene.selectedItems() if isinstance(x, OFnUINoteItem)]
+            if nts:
+                self.nodeSelected.emit(nts[-1].note())
+                return
+
+        self.nodeSelected.emit(None)
 
     def __onDeleteNode(self, id):
         itm = self.__nodes.pop(id)
@@ -610,8 +683,24 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         if not self.__slient:
             self.graphChanged.emit()
 
+    def __onDeleteNote(self, id):
+        itm = self.__notes.pop(id)
+        if itm is None:
+            return
+
+        self.__graphic_scene.removeItem(itm)
+
     def __onOpCreateRequested(self, name):
         self.__scene.createNode(name)
+
+    def __requestNewNote(self):
+        pos = self.mapToScene(self.mapFromGlobal(QtGui.QCursor.pos()))
+        self.__scene.createNote({"pos": (pos.x(), pos.y())})
+
+    def __onNoteCreated(self, note):
+        ni = OFnUINoteItem(note)
+        self.__notes[note.id()] = ni
+        self.__graphic_scene.addItem(ni)
 
     def __onNodeCreated(self, node):
         if node.id() in self.__nodes:
@@ -649,6 +738,8 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_Tab:
             self.__op_selector.show(self.mapFromGlobal(QtGui.QCursor.pos()))
+        elif event.key() == QtCore.Qt.Key_N:
+            self.__requestNewNote()
         elif event.key() == QtCore.Qt.Key_F:
             self.fit()
         elif event.key() == QtCore.Qt.Key_B:
@@ -672,8 +763,17 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
                 node.setUserData("ui:pos", (pos.x(), pos.y()))
                 selected_nodes.append(node)
 
-        if selected_nodes:
-            self.__scene.copyToClipboard(selected_nodes)
+        selected_notes = []
+        for note_item in self.__notes.values():
+            if note_item.isSelected():
+                note = note_item.note()
+                pos = note_item.pos()
+                note.setPos(pos.x(), pos.y())
+                note.setSize(*note_item.size())
+                selected_notes.append(note)
+
+        if selected_nodes or selected_notes:
+            self.__scene.copyToClipboard(selected_nodes, selected_notes)
 
     def __loadFromClipboard(self):
         self.__slient = True
@@ -700,10 +800,18 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
                 rmv_nodes.append(node_item)
 
         for rn in rmv_nodes:
-            rnh = rn.node().id()
             self.__scene.deleteNode(rn.node())
 
-        self.graphChanged.emit()
+        rmv_notes = []
+        for h, note_item in self.__notes.items():
+            if note_item.isSelected():
+                rmv_notes.append(note_item)
+
+        for rt in rmv_notes:
+            self.__scene.deleteNote(rt.note())
+
+        if rmv_cons or rmv_nodes:
+            self.graphChanged.emit()
 
         self.__slient = False
 
@@ -727,16 +835,6 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
             cur = self.__viewer_node.node().inputs()[0]
             if not cur or cur.id() != nds[-1].node().id():
                 self.__scene.connect(nds[-1].node(), self.__viewer_node.node(), 0)
-
-    def __createNote(self, pos):
-        note = OFnUINote()
-        pos = self.mapToScene(self.mapFromGlobal(QtGui.QCursor.pos()))
-        px = pos.x() - note.boundingRect().width() * 0.5
-        py = pos.y() - note.boundingRect().height() * 0.5
-
-        note.setPos(px, py)
-        self.__graphic_scene.addItem(note)
-
 
     def fit(self):
         rect = QtCore.QRect()
@@ -772,14 +870,18 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
             self.scale(0.95, 0.95)
 
     def mousePressEvent(self, event):
+        cur_pos = event.pos()
+        self.__resize_note = None
+
         if event.button() == QtCore.Qt.MiddleButton or (event.modifiers() == QtCore.Qt.AltModifier and event.button() == QtCore.Qt.LeftButton):
+            QtGui.QGuiApplication.restoreOverrideCursor()
             QtGui.QGuiApplication.setOverrideCursor(QtCore.Qt.OpenHandCursor)
             self.__move_scene = True
-            self.__old_scene_pos = event.pos()
+            self.__old_scene_pos = cur_pos
             return
 
+        item_at = self.itemAt(cur_pos)
         if self.__connector:
-            item_at = self.itemAt(event.pos())
             if isinstance(item_at, OFnUIPort):
                 start_item = self.__connector.item()
                 if start_item.node() != item_at.node() and start_item.direction() != item_at.direction():
@@ -797,10 +899,19 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
                 self.__connector = None
             return
 
+        if isinstance(item_at, OFnUINoteCorner):
+            self.__resize_note = item_at.noteItem()
+
+            return
+
         super(OFnUINodeGraph, self).mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
         cur_pos = event.pos()
+        if self.__resize_note is not None:
+            d = self.mapToScene(cur_pos) - self.__resize_note.pos()
+            self.__resize_note.setSize(d.x(), d.y())
+            return
 
         if self.__move_scene:
             if self.__old_scene_pos:
@@ -817,12 +928,18 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
                 self.__highlighted_port.setHighlight(False)
                 self.__highlighted_port = None
 
+        if not isinstance(item_at, OFnUINoteCorner):
+            QtGui.QGuiApplication.restoreOverrideCursor()
+
         if isinstance(item_at, OFnUIPort):
             self.__highlighted_port = item_at
             self.__highlighted_port.setHighlight(True)
 
         if self.__connector:
             self.__connector.setEndPos(self.mapToScene(cur_pos))
+        elif isinstance(item_at, OFnUINoteCorner):
+            QtGui.QGuiApplication.restoreOverrideCursor()
+            QtGui.QGuiApplication.setOverrideCursor(QtCore.Qt.SizeFDiagCursor)
 
         super(OFnUINodeGraph, self).mouseMoveEvent(event)
 
@@ -830,6 +947,7 @@ class OFnUINodeGraph(QtWidgets.QGraphicsView):
         QtGui.QGuiApplication.restoreOverrideCursor()
         self.__move_scene = False
         self.__old_scene_pos = None
+        self.__resize_note = None
 
         if self.__connector:
             item_at = self.itemAt(event.pos())
