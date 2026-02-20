@@ -121,6 +121,7 @@ OpenColorIO 2+ (python binding)
 PySide 6.7+
 
 ## TODO
-shift selection, group, packet viewer
-cmd
-scroll area
+shift selection, group, dot, packet viewer<br>
+cmd<br>
+scroll area<br>
+aka xyz<br>
