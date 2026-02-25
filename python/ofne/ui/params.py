@@ -191,7 +191,7 @@ class OFnUIBoolParam(QtWidgets.QCheckBox):
 
 class OFnUIParams(QtWidgets.QScrollArea):
     paramChanged = QtCore.Signal()
-    updateRequest =  QtCore.Signal(_NodeBase)
+    updateRequest = QtCore.Signal(_NodeBase)
     nodeRenamed = QtCore.Signal(_NodeBase)
 
     def __init__(self, parent=None):

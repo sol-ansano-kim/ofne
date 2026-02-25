@@ -178,12 +178,11 @@ class OFnUIScene(QtCore.QObject):
                 else:
                     b = max(b, y)
 
-
             for n in d["nodes"]:
                 ud = n.get("userData")
                 if "ui:pos" in ud:
                     _updateRect(*ud["ui:pos"])
-                    
+
             for n in d.get("misc", {}).get("notes", []):
                 _updateRect(*n["pos"])
 
