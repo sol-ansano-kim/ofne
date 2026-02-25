@@ -124,4 +124,4 @@ PySide 6.7+
 shift selection, group, dot, packet viewer<br>
 cmd<br>
 scroll area<br>
-aka xyz<br>
+parameter update<br>

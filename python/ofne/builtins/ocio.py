@@ -27,7 +27,7 @@ AKA = {
     "aka:cct": ["acescct_ap1"],
     "aka:srgb": ["srgb_tx"],
     "aka:srgb_linear": ["lin_srgb"],
-    "aka:xyzd65": ["cie_xyz_d65_display", "cie_xyz_d65"]
+    "aka:xyzd65": ["cie_xyz_d65_scene", "cie_xyz_d65"]
 }
 
 INTERP_MAP = {
