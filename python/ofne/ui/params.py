@@ -189,14 +189,13 @@ class OFnUIBoolParam(QtWidgets.QCheckBox):
         self.paramChanged.emit()
 
 
-class OFnUIParams(QtWidgets.QFrame):
+class OFnUIParams(QtWidgets.QScrollArea):
     paramChanged = QtCore.Signal()
     updateRequest =  QtCore.Signal(_NodeBase)
     nodeRenamed = QtCore.Signal(_NodeBase)
 
     def __init__(self, parent=None):
         super(OFnUIParams, self).__init__(parent=parent)
-        self.setFrameStyle(QtWidgets.QFrame.Raised | QtWidgets.QFrame.StyledPanel)
         self.__node = None
 
         main_layout = QtWidgets.QVBoxLayout(self)
