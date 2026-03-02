@@ -1,3 +1,4 @@
+import re
 import os
 import uuid
 import numpy as np
@@ -179,6 +180,11 @@ class OFnUIScene(QtCore.QObject):
                     b = max(b, y)
 
             for n in d["nodes"]:
+                if re.match("^" + n["type"], n["name"]):
+                    n["name"] = n["type"]
+                elif re.search("[0-9]+$", n["name"]):
+                    n["name"] = re.sub("[0-9]+$", "", n["name"])
+
                 ud = n.get("userData")
                 if "ui:pos" in ud:
                     _updateRect(*ud["ui:pos"])
