@@ -1,3 +1,7 @@
+# 0.2.2
+- Fix graph Tab key issue
+- When copying/duplicating a node, do not copy the index
+
 # 0.2.1
 - Prioritize cie_xyz_d65_scene over cie_xyz_d65_display when resolving aka:xyzd65
 - Updated parameter widget to use QScrollArea
