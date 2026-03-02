@@ -427,11 +427,11 @@ class OFnUIAimGeometry(object):
         sy = sxru * scale + imagePosY
 
         verts = []
-        for px, py in self.__quad(sx - 12.0, sy - 1.0,sx + 12.0, sy + 1.0):
+        for px, py in self.__quad(sx - 12.0, sy - 1.0, sx + 12.0, sy + 1.0):
             verts.append(px * wf)
             verts.append(py * hf)
 
-        for px, py in self.__quad(sx - 1.0, sy - 12.0,sx + 1.0, sy + 12.0):
+        for px, py in self.__quad(sx - 1.0, sy - 12.0, sx + 1.0, sy + 12.0):
             verts.append(px * wf)
             verts.append(py * hf)
 
