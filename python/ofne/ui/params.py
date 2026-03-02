@@ -196,6 +196,7 @@ class OFnUIParams(QtWidgets.QScrollArea):
 
     def __init__(self, parent=None):
         super(OFnUIParams, self).__init__(parent=parent)
+        self.setFocusPolicy(QtCore.Qt.NoFocus)
         self.__node = None
 
         main_layout = QtWidgets.QVBoxLayout(self)
