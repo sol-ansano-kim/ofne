@@ -1,4 +1,5 @@
 import re
+import numpy as np
 import PyOpenColorIO as ocio
 from ofne import plugin
 
@@ -41,6 +42,8 @@ INTERP_MAP = {
 
 BUILTIN_TRANSFORMS = [x[0] for x in ocio.BuiltinTransformRegistry().getBuiltins()]
 
+I2F = 1 / 255.0
+
 
 def _validPacketData(data):
     shape = data.shape
@@ -71,6 +74,37 @@ def _getColorSpaceName(config, inpt):
                 return cs.getName()
 
     return inpt
+
+
+def _forceType(src):
+    org_dt = None
+    cast_f = None
+
+    if src.dtype == np.float32:
+        return (src, None, None)
+
+    org_dt = src.dtype
+    nd = src.astype(np.float32)
+
+    if np.issubdtype(org_dt, np.integer):
+        cast_f = 255
+        nd *= I2F
+
+    return (nd, org_dt, cast_f)
+
+
+def _revertType(src, org_dt, cast_f):
+    if org_dt is None:
+        return src
+
+    nd = src
+    if np.issubdtype(org_dt, np.unsignedinteger):
+        nd = np.clip(nd, 0, np.iinfo(org_dt).max)
+
+    if cast_f is None:
+        return nd.astype(org_dt)
+    else:
+        return (nd * cast_f).astype(org_dt)
 
 
 class OCIOMatrixTransform(plugin.OFnOp):
@@ -114,6 +148,8 @@ class OCIOMatrixTransform(plugin.OFnOp):
         if not _validPacketData(d):
             return plugin.OFnPacket()
 
+        d, org_dt, cast_f = _forceType(d)
+
         matrix = [
             params.get("m00"),
             params.get("m01"),
@@ -151,6 +187,8 @@ class OCIOMatrixTransform(plugin.OFnOp):
         func = proc.applyRGB if d.shape[2] == 3 else proc.applyRGBA
         func(d)
 
+        d = _revertType(d, org_dt, cast_f)
+
         return plugin.OFnPacket(data=d)
 
 
@@ -177,6 +215,8 @@ class OCIOAllocationUniformTransform(plugin.OFnOp):
         if not _validPacketData(d):
             return plugin.OFnPacket()
 
+        d, org_dt, cast_f = _forceType(d)
+
         direction = ocio.TRANSFORM_DIR_INVERSE if params.get("inverse") else ocio.TRANSFORM_DIR_FORWARD
         proc = RAW_CONFIG.getProcessor(
             ocio.AllocationTransform(
@@ -191,6 +231,8 @@ class OCIOAllocationUniformTransform(plugin.OFnOp):
 
         func = proc.applyRGB if d.shape[2] == 3 else proc.applyRGBA
         func(d)
+
+        d = _revertType(d, org_dt, cast_f)
 
         return plugin.OFnPacket(data=d)
 
@@ -219,6 +261,8 @@ class OCIOAllocationLog2Transform(plugin.OFnOp):
         if not _validPacketData(d):
             return plugin.OFnPacket()
 
+        d, org_dt, cast_f = _forceType(d)
+
         direction = ocio.TRANSFORM_DIR_INVERSE if params.get("inverse") else ocio.TRANSFORM_DIR_FORWARD
         proc = RAW_CONFIG.getProcessor(
             ocio.AllocationTransform(
@@ -234,6 +278,8 @@ class OCIOAllocationLog2Transform(plugin.OFnOp):
 
         func = proc.applyRGB if d.shape[2] == 3 else proc.applyRGBA
         func(d)
+
+        d = _revertType(d, org_dt, cast_f)
 
         return plugin.OFnPacket(data=d)
 
@@ -262,6 +308,8 @@ class OCIOFileTransform(plugin.OFnOp):
         if not _validPacketData(d):
             return plugin.OFnPacket()
 
+        d, org_dt, cast_f = _forceType(d)
+
         direction = ocio.TRANSFORM_DIR_INVERSE if params.get("inverse") else ocio.TRANSFORM_DIR_FORWARD
         proc = RAW_CONFIG.getProcessor(
             ocio.FileTransform(
@@ -274,6 +322,8 @@ class OCIOFileTransform(plugin.OFnOp):
 
         func = proc.applyRGB if d.shape[2] == 3 else proc.applyRGBA
         func(d)
+
+        d = _revertType(d, org_dt, cast_f)
 
         return plugin.OFnPacket(data=d)
 
@@ -300,12 +350,16 @@ class OCIOExponentTransform(plugin.OFnOp):
         if not _validPacketData(d):
             return plugin.OFnPacket()
 
+        d, org_dt, cast_f = _forceType(d)
+
         gamma = params.get("gamma")
         direction = ocio.TRANSFORM_DIR_INVERSE if params.get("inverse") else ocio.TRANSFORM_DIR_FORWARD
         proc = RAW_CONFIG.getProcessor(ocio.ExponentTransform(value=[gamma, gamma, gamma, 1.0], negativeStyle=ocio.NEGATIVE_CLAMP, direction=direction)).getDefaultCPUProcessor()
 
         func = proc.applyRGB if d.shape[2] == 3 else proc.applyRGBA
         func(d)
+
+        d = _revertType(d, org_dt, cast_f)
 
         return plugin.OFnPacket(data=d)
 
@@ -333,6 +387,8 @@ class OCIOExponentWithLinearTransform(plugin.OFnOp):
         if not _validPacketData(d):
             return plugin.OFnPacket()
 
+        d, org_dt, cast_f = _forceType(d)
+
         gamma = params.get("gamma")
         offset = params.get("offset")
         direction = ocio.TRANSFORM_DIR_INVERSE if params.get("inverse") else ocio.TRANSFORM_DIR_FORWARD
@@ -340,6 +396,8 @@ class OCIOExponentWithLinearTransform(plugin.OFnOp):
 
         func = proc.applyRGB if d.shape[2] == 3 else proc.applyRGBA
         func(d)
+
+        d = _revertType(d, org_dt, cast_f)
 
         return plugin.OFnPacket(data=d)
 
@@ -372,6 +430,8 @@ class OCIOExposureContrastTransform(plugin.OFnOp):
         if not _validPacketData(d):
             return plugin.OFnPacket()
 
+        d, org_dt, cast_f = _forceType(d)
+
         trn = ocio.ExposureContrastTransform(
             exposure=params.get("exposure"),
             contrast=params.get("contrast"),
@@ -385,6 +445,8 @@ class OCIOExposureContrastTransform(plugin.OFnOp):
 
         func = proc.applyRGB if d.shape[2] == 3 else proc.applyRGBA
         func(d)
+
+        d = _revertType(d, org_dt, cast_f)
 
         return plugin.OFnPacket(data=d)
 
@@ -419,6 +481,8 @@ class OCIOColorSpaceTransform(plugin.OFnOp):
         if not config_path or not src or not dst:
             return plugin.OFnPacket()
 
+        d, org_dt, cast_f = _forceType(d)
+
         config = _getOCIO(config_path)
         src = _getColorSpaceName(config, src)
         dst = _getColorSpaceName(config, dst)
@@ -426,6 +490,8 @@ class OCIOColorSpaceTransform(plugin.OFnOp):
 
         func = proc.applyRGB if d.shape[2] == 3 else proc.applyRGBA
         func(d)
+
+        d = _revertType(d, org_dt, cast_f)
 
         return plugin.OFnPacket(data=d)
 
@@ -463,6 +529,8 @@ class OCIODisplayViewTransform(plugin.OFnOp):
         if not config_path or not src or not display or not view:
             return plugin.OFnPacket()
 
+        d, org_dt, cast_f = _forceType(d)
+
         config = _getOCIO(config_path)
         src = _getColorSpaceName(config, src)
         proc = None
@@ -470,6 +538,8 @@ class OCIODisplayViewTransform(plugin.OFnOp):
 
         func = proc.applyRGB if d.shape[2] == 3 else proc.applyRGBA
         func(d)
+
+        d = _revertType(d, org_dt, cast_f)
 
         return plugin.OFnPacket(data=d)
 
@@ -508,11 +578,15 @@ class OCIONamedTransform(plugin.OFnOp):
         if config is None:
             return plugin.OFnPacket()
 
+        d, org_dt, cast_f = _forceType(d)
+
         nt = config.getNamedTransform(name)
         proc = config.getProcessor(nt, direction).getDefaultCPUProcessor()
 
         func = proc.applyRGB if d.shape[2] == 3 else proc.applyRGBA
         func(d)
+
+        d = _revertType(d, org_dt, cast_f)
 
         return plugin.OFnPacket(data=d)
 
@@ -545,9 +619,13 @@ class OCIOBuiltinTransform(plugin.OFnOp):
         if not name:
             return plugin.OFnPacket()
 
+        d, org_dt, cast_f = _forceType(d)
+
         proc = RAW_CONFIG.getProcessor(ocio.BuiltinTransform(name), direction).getDefaultCPUProcessor()
 
         func = proc.applyRGB if d.shape[2] == 3 else proc.applyRGBA
         func(d)
+
+        d = _revertType(d, org_dt, cast_f)
 
         return plugin.OFnPacket(data=d)

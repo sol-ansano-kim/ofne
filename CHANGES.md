@@ -1,6 +1,7 @@
 # 0.2.3
 - Reader does not force floating‑point values
 - Viewer correctly displays integer values
+- OCIO processing in float32
 
 # 0.2.2
 - Fix graph Tab key issue
