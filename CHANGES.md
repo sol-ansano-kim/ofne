@@ -1,3 +1,6 @@
+# 0.2.4
+- Fix wrong datatype casting
+
 # 0.2.3
 - Reader does not force floating‑point values
 - Viewer correctly displays integer values

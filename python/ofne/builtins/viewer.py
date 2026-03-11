@@ -21,8 +21,12 @@ class Viewer(plugin.OFnOp):
         d = p.data()
         if d.dtype != numpy.float32:
             if numpy.issubdtype(d.dtype, numpy.integer):
-                f = 1 / 255.0
-                resource.OFnViewResource().dump(plugin.OFnPacket(data=d.astype(numpy.float32) * f, metadata=p.metadata()))
+                invf = numpy.float64(1 / float(numpy.iinfo(d.dtype).max))
+                resource.OFnViewResource().dump(plugin.OFnPacket(data=(d * invf).astype(numpy.float32), metadata=p.metadata()))
+            elif d.dtype == numpy.float64:
+                f32 = numpy.finfo(numpy.float32)
+                d = numpy.clip(d, f32.min, f32.max)
+                resource.OFnViewResource().dump(plugin.OFnPacket(data=d.astype(numpy.float32), metadata=p.metadata()))
             else:
                 resource.OFnViewResource().dump(plugin.OFnPacket(data=d.astype(numpy.float32), metadata=p.metadata()))
         else:
