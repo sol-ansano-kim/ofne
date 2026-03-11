@@ -20,7 +20,11 @@ class Viewer(plugin.OFnOp):
         p = packetArray.packet(0)
         d = p.data()
         if d.dtype != numpy.float32:
-            resource.OFnViewResource().dump(plugin.OFnPacket(data=d.astype(numpy.float32), metadata=p.metadata()))
+            if numpy.issubdtype(d.dtype, numpy.integer):
+                f = 1 / 255.0
+                resource.OFnViewResource().dump(plugin.OFnPacket(data=d.astype(numpy.float32) * f, metadata=p.metadata()))
+            else:
+                resource.OFnViewResource().dump(plugin.OFnPacket(data=d.astype(numpy.float32), metadata=p.metadata()))
         else:
             resource.OFnViewResource().dump(p)
 

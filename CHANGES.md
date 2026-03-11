@@ -1,3 +1,7 @@
+# 0.2.3
+- Reader does not force floating‑point values
+- Viewer correctly displays integer values
+
 # 0.2.2
 - Fix graph Tab key issue
 - When copying/duplicating a node, do not copy the index

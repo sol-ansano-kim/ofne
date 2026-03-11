@@ -30,7 +30,7 @@ class ReadImage(plugin.OFnOp):
 
         buf = oiio.ImageBuf(path)
 
-        return plugin.OFnPacket(data=buf.get_pixels(format=oiio.FLOAT))
+        return plugin.OFnPacket(data=buf.get_pixels(format=buf.pixeltype))
 
 
 class ConstantImage(plugin.OFnOp):
